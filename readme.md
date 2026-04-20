@@ -3,7 +3,7 @@
 ### BackEnd
 - Java 21, Spring Boot 3.5.13, Spring Ai 1.1.x, Spring Security, JWT
 ### DB
-- MariaDB
+- PostgreSQL
 ### Server
 - aws ec2, docker, docker-compose, jenkins
 
