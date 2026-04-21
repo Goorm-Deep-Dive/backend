@@ -1,5 +1,6 @@
 package org.accompany.backend.global.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.response.ErrorResponse;
@@ -55,12 +56,12 @@ public class GlobalExceptionHandler {
 	 * - ConstraintViolationException 발생
 	 * - (현재는 상세 필드 정보 없이 공통 에러로 처리)
 	 */
-//	@ExceptionHandler(ConstraintViolationException.class)
-//	public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException e) {
-//		return ResponseEntity
-//				.badRequest()
-//				.body(ErrorResponse.of(ErrorCode.INVALID_REQUEST));
-//	}
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException e) {
+		return ResponseEntity
+				.badRequest()
+				.body(ErrorResponse.of(ErrorCode.INVALID_REQUEST));
+	}
 
 	/**
 	 * 그 외 모든 예외 처리 (최종 fallback)
