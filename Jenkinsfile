@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JDK21'
-    }
-
     environment {
         IMAGE_NAME = 'spring-app'
         CONTAINER_NAME = 'spring-app'
