@@ -6,6 +6,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
+import org.accompany.backend.domain.procedure.entity.SurveyAnswerProcedure;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "survey_answers")
@@ -27,6 +31,9 @@ public class SurveyAnswer extends BaseEntity {
 
     @Column(nullable = false, length = 200)
     private String surveyAnswerText;
+
+    @OneToMany(mappedBy = "surveyAnswer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SurveyAnswerProcedure> surveyAnswerProcedures = new ArrayList<>();
 
     @Builder
     private SurveyAnswer(
