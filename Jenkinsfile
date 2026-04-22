@@ -39,7 +39,8 @@ pipeline {
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
                 ]) {
                     sh '''
-                    cp "$APP_YML" ./application.yml
+                    cp "$APP_YML" /tmp/application.yml
+                    chmod 644 /tmp/application.yml
 
                     echo "current dir: $(pwd)"
                     ls -al ./application.yml
@@ -52,7 +53,7 @@ pipeline {
                         --network "$NETWORK_NAME" \
                         --restart unless-stopped \
                         -p 8090:8080 \
-                        -v "$(pwd)/application.yml:/app/application.yml:ro" \
+                        -v /tmp/application.yml:/app/application.yml:ro \
                         -e SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME" \
                         -e SPRING_DATASOURCE_USERNAME="$DB_USER" \
                         -e SPRING_DATASOURCE_PASSWORD="$DB_PASSWORD" \
