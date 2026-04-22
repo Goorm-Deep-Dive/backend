@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "procedure_channels")
@@ -21,6 +23,7 @@ public class ProcedureChannel extends BaseEntity {
     @JoinColumn(name = "procedure_id", nullable = false)
     private Procedure procedure;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private ChannelType channelType;

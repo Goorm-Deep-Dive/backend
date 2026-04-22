@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -26,6 +28,7 @@ public class DeceasedProfile extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime dateOfDeath;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SurveyStatus surveyStatus;
