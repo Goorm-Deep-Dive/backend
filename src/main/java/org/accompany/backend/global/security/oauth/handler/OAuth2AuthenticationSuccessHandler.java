@@ -51,29 +51,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     authorizationRequestRepository.loadAuthorizationRequest(request);
 
             String redirectUri = extractRedirectUri(authorizationRequest);
+
             String dateOfDeathValue = extractDateOfDeath(authorizationRequest);
 
             if (!isAuthorizedRedirectUri(redirectUri)) {
                 redirectUri = oauth2Properties.getAuthorizedRedirectUris().get(0);
-            }
-
-            boolean linkGoogleRequest = isLinkGoogleRequest(authorizationRequest);
-            boolean isGoogleLogin = "google".equals(oauthToken.getAuthorizedClientRegistrationId());
-
-            if (isGoogleLogin && user.isNewUser() && !linkGoogleRequest) {
-                authorizationRequestRepository.removeAuthorizationRequest(request, response);
-
-                String reAuthUrl = UriComponentsBuilder
-                        .fromPath("/api/v1/auth/oauth2/authorization/google")
-                        .queryParam("redirect_uri", redirectUri)
-                        .queryParam("link_google", "true")
-                        .queryParam("date_of_death", dateOfDeathValue)
-                        .build()
-                        .toUriString();
-
-                log.info("[OAuth2] 신규 회원 추가 동의 요청 - userId: {}", user.getUserId());
-                getRedirectStrategy().sendRedirect(request, response, reAuthUrl);
-                return;
             }
 
             OAuth2AuthorizedClient authorizedClient =
@@ -132,8 +114,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return null;
         }
 
-        Map<String, Object> attributes = authorizationRequest.getAttributes();
-        Object dateOfDeath = attributes.get("dateOfDeath");
+        Object dateOfDeath =
+                authorizationRequest.getAdditionalParameters().get("date_of_death");
 
         return dateOfDeath != null ? dateOfDeath.toString() : null;
     }
