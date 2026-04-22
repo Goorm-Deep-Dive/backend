@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
-import org.accompany.backend.domain.survey.entity.SurveyAnswer;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -27,10 +26,6 @@ public class Procedure extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "procedure_category_id", nullable = false)
     private ProcedureCategory procedureCategory;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "survey_answer_id", nullable = false)
-    private SurveyAnswer surveyAnswer;
 
     @Column(nullable = false, length = 100)
     private String procedureName;
@@ -60,6 +55,9 @@ public class Procedure extends BaseEntity {
     private String cautionText;
 
     @OneToMany(mappedBy = "procedure", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SurveyAnswerProcedure> surveyAnswerProcedures = new ArrayList<>();
+
+    @OneToMany(mappedBy = "procedure", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProcedureDocument> procedureDocuments = new ArrayList<>();
 
     @OneToMany(mappedBy = "procedure", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -71,7 +69,6 @@ public class Procedure extends BaseEntity {
     @Builder
     private Procedure(
             ProcedureCategory procedureCategory,
-            SurveyAnswer surveyAnswer,
             String procedureName,
             String description,
             DueDateType dueDateType,
@@ -82,7 +79,6 @@ public class Procedure extends BaseEntity {
             String cautionText
     ) {
         this.procedureCategory = procedureCategory;
-        this.surveyAnswer = surveyAnswer;
         this.procedureName = procedureName;
         this.description = description;
         this.dueDateType = dueDateType;
