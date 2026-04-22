@@ -60,7 +60,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/v1/auth/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/api/v1/auth/oauth2/refresh", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -122,7 +122,11 @@ public class SecurityConfig {
                 }
 
                 if (dateOfDeath != null && !dateOfDeath.isBlank()) {
-                    attributes.put("dateOfDeath", dateOfDeath);
+                    additionalParameters.put("date_of_death", dateOfDeath);
+                }
+
+                if (isGoogleAuthorizationRequest(request)) {
+                    additionalParameters.put("access_type", "offline");
                 }
 
                 if ("true".equals(linkGoogle)) {
@@ -135,6 +139,11 @@ public class SecurityConfig {
                         .additionalParameters(additionalParameters)
                         .attributes(attributes)
                         .build();
+            }
+
+            private boolean isGoogleAuthorizationRequest(HttpServletRequest request) {
+                String requestUri = request.getRequestURI();
+                return requestUri != null && requestUri.endsWith("/google");
             }
         };
     }

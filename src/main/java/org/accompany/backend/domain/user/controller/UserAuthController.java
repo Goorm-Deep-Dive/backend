@@ -28,4 +28,13 @@ public class UserAuthController {
                                                         HttpServletResponse response) {
         return ApiResponse.success(SuccessCode.OK, userAuthService.refresh(request, response));
     }
+
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request,
+                                                    HttpServletResponse response) {
+        userAuthService.logout(request, response);
+        return ApiResponse.success(SuccessCode.OK);
+    }
+
 }

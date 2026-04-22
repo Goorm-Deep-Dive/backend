@@ -147,6 +147,8 @@ public class User extends BaseEntity {
     public void withdraw() {
         this.status = UserStatus.DELETED;
         this.deletedAt = LocalDateTime.now();
+        this.name = null;
+        this.email = null;
         this.providerUserId = null;
         this.providerAccessToken = null;
         this.providerRefreshToken = null;

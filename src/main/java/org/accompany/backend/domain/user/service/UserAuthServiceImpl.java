@@ -112,4 +112,20 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         log.info("[Auth] 소셜 로그인 토큰 발급 완료 - userId: {}", userId);
     }
+
+    @Override
+    @Transactional
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        log.info("[Auth] 로그아웃 시작");
+
+        String refreshToken = jwtCookieProvider.resolveRefreshToken(request);
+
+        if(refreshToken != null && !refreshToken.isBlank()) {
+            refreshTokenRepository.deleteByRefreshToken(refreshToken);
+        }
+
+        jwtCookieProvider.deleteRefreshTokenCookie(response);
+
+        log.info("[Auth] 로그아웃 성공");
+    }
 }
