@@ -12,4 +12,8 @@ public enum Provider {
     NAVER("네이버");
 
     private final String label;
+
+    public static Provider from(String registrationId) {
+        return Provider.valueOf(registrationId.toUpperCase());
+    }
 }

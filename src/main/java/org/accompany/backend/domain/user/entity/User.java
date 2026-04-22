@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Provider provider;
@@ -42,6 +45,12 @@ public class User extends BaseEntity {
     @Column(length = 100)
     private String email;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status;
@@ -58,6 +67,12 @@ public class User extends BaseEntity {
     @Column(length = 100)
     private String googleProviderUserId;
 
+    @Column(columnDefinition = "TEXT")
+    private String googleAccessToken;
+
+    @Column(columnDefinition = "TEXT")
+    private String googleRefreshToken;
+
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -72,32 +87,52 @@ public class User extends BaseEntity {
             String providerUserId,
             String name,
             String email,
+            Role role,
             UserStatus status,
             Boolean isNotificationEnabled,
             String providerAccessToken,
             String providerRefreshToken,
             String googleProviderUserId,
+            String googleAccessToken,
+            String googleRefreshToken,
             LocalDateTime deletedAt
     ) {
         this.provider = provider;
         this.providerUserId = providerUserId;
         this.name = name;
         this.email = email;
+        this.role = role != null ? role : Role.USER;
         this.status = status != null ? status : UserStatus.ACTIVE;
         this.isNotificationEnabled = isNotificationEnabled != null ? isNotificationEnabled : true;
         this.providerAccessToken = providerAccessToken;
         this.providerRefreshToken = providerRefreshToken;
         this.googleProviderUserId = googleProviderUserId;
+        this.googleAccessToken = googleAccessToken;
+        this.googleRefreshToken = googleRefreshToken;
         this.deletedAt = deletedAt;
+    }
+
+    public void updateProfile(String email, String name) {
+        this.email = email;
+        this.name = name;
     }
 
     public void updateSocialToken(String providerAccessToken, String providerRefreshToken) {
         this.providerAccessToken = providerAccessToken;
-        this.providerRefreshToken = providerRefreshToken;
+        if (providerRefreshToken != null) {
+            this.providerRefreshToken = providerRefreshToken;
+        }
     }
 
     public void connectGoogleAccount(String googleProviderUserId) {
         this.googleProviderUserId = googleProviderUserId;
+    }
+
+    public void updateGoogleToken(String googleAccessToken, String googleRefreshToken) {
+        this.googleAccessToken = googleAccessToken;
+        if (googleRefreshToken != null) {
+            this.googleRefreshToken = googleRefreshToken;
+        }
     }
 
     public void updateNotification(boolean isNotificationEnabled) {
@@ -116,6 +151,8 @@ public class User extends BaseEntity {
         this.providerAccessToken = null;
         this.providerRefreshToken = null;
         this.googleProviderUserId = null;
+        this.googleAccessToken = null;
+        this.googleRefreshToken = null;
     }
 
     public void addDeceasedProfile(DeceasedProfile deceasedProfile) {

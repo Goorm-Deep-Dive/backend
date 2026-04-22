@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
 import org.accompany.backend.domain.survey.entity.SurveyAnswer;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +38,12 @@ public class Procedure extends BaseEntity {
     @Column(length = 255)
     private String description;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private DueDateType dueDateType;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private DueDateUnit dueDateUnit;

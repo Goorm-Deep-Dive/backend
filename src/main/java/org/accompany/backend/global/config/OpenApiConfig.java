@@ -21,6 +21,8 @@ public class OpenApiConfig {
 	@Bean
 	public OpenAPI openAPI() {
 		return new OpenAPI()
+				.addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement()
+						.addList("BearerAuth"))
 				.info(new Info()
 						.title("동행 API")
 						.version("v1")
