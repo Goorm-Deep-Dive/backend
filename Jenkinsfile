@@ -33,11 +33,14 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([
+                    file(credentialsId: 'application.yml', variable: 'APP_YML'),
                     string(credentialsId: 'db-name', variable: 'DB_NAME'),
                     string(credentialsId: 'db-user', variable: 'DB_USER'),
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
                 ]) {
                     sh """
+                    cp \$APP_YML application.yml
+                    
                     docker stop ${CONTAINER_NAME} || true
                     docker rm ${CONTAINER_NAME} || true
                     docker run -d \
@@ -45,6 +48,7 @@ pipeline {
                         --network ${NETWORK_NAME} \
                         --restart unless-stopped \
                         -p 8090:8080 \
+                        -v \$(pwd)/application.yml:/app/application.yml \
                         -e SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} \
                         -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
                         -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
