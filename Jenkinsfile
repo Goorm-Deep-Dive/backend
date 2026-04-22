@@ -39,8 +39,8 @@ pipeline {
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
                 ]) {
                     sh '''
-                    cp "$APP_YML" /tmp/application.yml
-                    chmod 644 /tmp/application.yml
+                    cp "$APP_YML" ./application.yml
+                    chmod 644 ./application.yml
 
                     echo "current dir: $(pwd)"
                     ls -al ./application.yml
@@ -48,17 +48,20 @@ pipeline {
                     docker stop "$CONTAINER_NAME" || true
                     docker rm "$CONTAINER_NAME" || true
 
-                    docker run -d \
+                    docker create \
                         --name "$CONTAINER_NAME" \
                         --network "$NETWORK_NAME" \
                         --restart unless-stopped \
                         -p 8090:8080 \
-                        -v /tmp/application.yml:/app/application.yml:ro \
                         -e SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME" \
                         -e SPRING_DATASOURCE_USERNAME="$DB_USER" \
                         -e SPRING_DATASOURCE_PASSWORD="$DB_PASSWORD" \
                         "$IMAGE_NAME:latest" \
                         --spring.config.location=file:/app/application.yml
+
+                    docker cp ./application.yml "$CONTAINER_NAME:/app/application.yml"
+
+                    docker start "$CONTAINER_NAME"
                     '''
                 }
             }
