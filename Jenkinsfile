@@ -38,22 +38,27 @@ pipeline {
                     string(credentialsId: 'db-user', variable: 'DB_USER'),
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
                 ]) {
-                    sh """
-                    cp \$APP_YML application.yml
-                    
-                    docker stop ${CONTAINER_NAME} || true
-                    docker rm ${CONTAINER_NAME} || true
+                    sh '''
+                    cp "$APP_YML" ./application.yml
+
+                    echo "current dir: $(pwd)"
+                    ls -al ./application.yml
+
+                    docker stop "$CONTAINER_NAME" || true
+                    docker rm "$CONTAINER_NAME" || true
+
                     docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        --network ${NETWORK_NAME} \
+                        --name "$CONTAINER_NAME" \
+                        --network "$NETWORK_NAME" \
                         --restart unless-stopped \
                         -p 8090:8080 \
-                        -v \$(pwd)/application.yml:/app/application.yml \
-                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} \
-                        -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
-                        -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
-                        ${IMAGE_NAME}:latest
-                    """
+                        -v "$(pwd)/application.yml:/app/application.yml:ro" \
+                        -e SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME" \
+                        -e SPRING_DATASOURCE_USERNAME="$DB_USER" \
+                        -e SPRING_DATASOURCE_PASSWORD="$DB_PASSWORD" \
+                        "$IMAGE_NAME:latest" \
+                        --spring.config.location=file:/app/application.yml
+                    '''
                 }
             }
         }
