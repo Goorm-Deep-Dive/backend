@@ -9,6 +9,8 @@ import org.accompany.backend.domain.user.entity.Role;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.RefreshTokenRepository;
 import org.accompany.backend.domain.user.repository.UserRepository;
+import org.accompany.backend.global.code.ErrorCode;
+import org.accompany.backend.global.exception.BusinessException;
 import org.accompany.backend.global.security.dto.TokenRes;
 import org.accompany.backend.global.security.jwt.JwtCookieProvider;
 import org.accompany.backend.global.security.jwt.JwtTokenProvider;
@@ -39,41 +41,35 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         if (token == null) {
             log.warn("[Auth] RefreshToken 없음 - 재발급 요청 실패");
-            throw new IllegalArgumentException("리프레시 토큰이 없습니다.");
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
         }
 
         if (!jwtTokenProvider.validateToken(token)) {
             log.warn("[Auth] 유효하지 않은 RefreshToken - 재발급 요청 실패");
-            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         RefreshToken refreshToken = refreshTokenRepository.findByRefreshToken(token)
                 .orElseThrow(() -> {
                     log.warn("[Auth] 저장된 RefreshToken 조회 실패");
-                    return new IllegalArgumentException("저장된 리프레시 토큰이 없습니다.");
+                    return new BusinessException(ErrorCode.STORED_REFRESH_TOKEN_NOT_FOUND);
                 });
 
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             log.warn("[Auth] 만료된 RefreshToken - userId: {}", refreshToken.getUser().getUserId());
-            throw new IllegalArgumentException("만료된 리프레시 토큰입니다.");
+            throw new BusinessException(ErrorCode.EXPIRED_REFRESH_TOKEN);
         }
 
-        try {
-            User user = refreshToken.getUser();
+        User user = refreshToken.getUser();
 
-            String newAccessToken = jwtTokenProvider.createAccessToken(
-                    user.getUserId(),
-                    user.getRole()
-            );
+        String newAccessToken = jwtTokenProvider.createAccessToken(
+                user.getUserId(),
+                user.getRole()
+        );
 
-            log.info("[Auth] AccessToken 재발급 완료 - userId: {}", user.getUserId());
+        log.info("[Auth] AccessToken 재발급 완료 - userId: {}", user.getUserId());
 
-            return new TokenRes(newAccessToken);
-
-        } catch (Exception e) {
-            log.error("[Auth] AccessToken 재발급 중 서버 오류 발생", e);
-            throw e;
-        }
+        return new TokenRes(newAccessToken);
     }
 
     /**
@@ -82,44 +78,38 @@ public class UserAuthServiceImpl implements UserAuthService {
     @Override
     @Transactional
     public void loginSuccess(Long userId,
-                                 Role role,
-                                 String providerAccessToken,
-                                 String providerRefreshToken,
-                                 HttpServletResponse response) {
+                             Role role,
+                             String providerAccessToken,
+                             String providerRefreshToken,
+                             HttpServletResponse response) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("[Auth] 로그인 성공 처리 실패 - 사용자 조회 실패, userId: {}", userId);
-                    return new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
                 });
 
-        try {
+        user.updateSocialToken(providerAccessToken, providerRefreshToken);
 
-            user.updateSocialToken(providerAccessToken, providerRefreshToken);
+        String refreshTokenValue = jwtTokenProvider.createRefreshToken(user.getUserId());
 
-            String refreshTokenValue = jwtTokenProvider.createRefreshToken(user.getUserId());
+        LocalDateTime expiresAt = jwtTokenProvider.getExpiration(refreshTokenValue)
+                .toInstant()
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDateTime();
 
-            LocalDateTime expiresAt = jwtTokenProvider.getExpiration(refreshTokenValue)
-                    .toInstant()
-                    .atZone(java.time.ZoneId.systemDefault())
-                    .toLocalDateTime();
+        refreshTokenRepository.deleteByUser(user);
 
-            refreshTokenRepository.deleteByUser(user);
+        RefreshToken refreshToken = RefreshToken.builder()
+                .user(user)
+                .refreshToken(refreshTokenValue)
+                .expiresAt(expiresAt)
+                .build();
 
-            RefreshToken refreshToken = RefreshToken.builder()
-                    .user(user)
-                    .refreshToken(refreshTokenValue)
-                    .expiresAt(expiresAt)
-                    .build();
-            refreshTokenRepository.save(refreshToken);
+        refreshTokenRepository.save(refreshToken);
 
-            jwtCookieProvider.createRefreshTokenCookie(response, refreshTokenValue);
+        jwtCookieProvider.createRefreshTokenCookie(response, refreshTokenValue);
 
-            log.info("[Auth] 소셜 로그인 토큰 발급 완료 - userId: {}", userId);
-
-        } catch (Exception e) {
-            log.error("[Auth] 소셜 로그인 토큰 발급 중 서버 오류 발생 - userId: {}", userId, e);
-            throw e;
-        }
+        log.info("[Auth] 소셜 로그인 토큰 발급 완료 - userId: {}", userId);
     }
 }

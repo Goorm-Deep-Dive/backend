@@ -63,6 +63,15 @@ public class GlobalExceptionHandler {
 				.body(ErrorResponse.of(ErrorCode.INVALID_REQUEST));
 	}
 
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+		log.warn("IllegalArgumentException 발생: {}", e.getMessage(), e);
+
+		return ResponseEntity
+				.badRequest()
+				.body(ErrorResponse.of(ErrorCode.INVALID_REQUEST));
+	}
+
 	/**
 	 * 그 외 모든 예외 처리 (최종 fallback)
 	 * - 예상하지 못한 예외를 처리하여 서버 에러로 응답
