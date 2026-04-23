@@ -110,7 +110,6 @@ public class SecurityConfig {
 
                 String redirectUri = request.getParameter("redirect_uri");
                 String linkGoogle = request.getParameter("link_google");
-                String dateOfDeath = request.getParameter("date_of_death");
 
                 Map<String, Object> additionalParameters =
                         new HashMap<>(authorizationRequest.getAdditionalParameters());
@@ -119,10 +118,6 @@ public class SecurityConfig {
 
                 if (redirectUri != null && !redirectUri.isBlank()) {
                     attributes.put("redirect_uri", redirectUri);
-                }
-
-                if (dateOfDeath != null && !dateOfDeath.isBlank()) {
-                    additionalParameters.put("date_of_death", dateOfDeath);
                 }
 
                 if (isGoogleAuthorizationRequest(request)) {

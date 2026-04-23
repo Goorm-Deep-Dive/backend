@@ -35,6 +35,9 @@ public class SurveyQuestion extends BaseEntity {
     @Column(nullable = false, length = 200)
     private String surveyQuestionText;
 
+    @Column(length = 500)
+    private String description;
+
     @OneToMany(mappedBy = "surveyQuestion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyAnswer> surveyAnswers = new ArrayList<>();
 
@@ -42,10 +45,12 @@ public class SurveyQuestion extends BaseEntity {
     private SurveyQuestion(
             SurveyQuestionType questionType,
             SurveyRequirementType requirementType,
-            String surveyQuestionText
+            String surveyQuestionText,
+            String description
     ) {
         this.questionType = questionType;
         this.requirementType = requirementType;
         this.surveyQuestionText = surveyQuestionText;
+        this.description = description;
     }
 }

@@ -4,9 +4,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.dto.response.UserProfileRes;
-import org.accompany.backend.domain.user.entity.DeceasedProfile;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.user.entity.User;
-import org.accompany.backend.domain.user.repository.DeceasedProfileRepository;
+import org.accompany.backend.domain.deceasedProfile.repository.DeceasedProfileRepository;
 import org.accompany.backend.domain.user.repository.RefreshTokenRepository;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
@@ -15,7 +15,7 @@ import org.accompany.backend.global.security.jwt.JwtCookieProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -35,14 +35,10 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        DeceasedProfile deceasedProfile =
-                deceasedProfileRepository.findByUser_UserId(userId);
-
         return new UserProfileRes(
                 user.getName(),
                 user.getEmail(),
-                user.getProvider(),
-                deceasedProfile != null ? LocalDate.from(deceasedProfile.getDateOfDeath()) : null
+                user.getProvider()
         );
     }
 

@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.accompany.backend.domain.user.service.DeceasedProfileService;
+import org.accompany.backend.domain.deceasedProfile.service.DeceasedProfileService;
 import org.accompany.backend.domain.user.service.UserAuthService;
 import org.accompany.backend.global.config.OAuth2Properties;
 import org.accompany.backend.global.security.oauth.user.CustomOAuth2User;
@@ -20,7 +20,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.URI;
-import java.time.LocalDate;
 import java.util.Map;
 
 /**
@@ -52,8 +51,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             String redirectUri = extractRedirectUri(authorizationRequest);
 
-            String dateOfDeathValue = extractDateOfDeath(authorizationRequest);
-
             if (!isAuthorizedRedirectUri(redirectUri)) {
                 redirectUri = oauth2Properties.getAuthorizedRedirectUris().get(0);
             }
@@ -80,17 +77,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     response
             );
 
-            if (dateOfDeathValue != null && !dateOfDeathValue.isBlank()) {
-                try {
-                    LocalDate dateOfDeath = LocalDate.parse(dateOfDeathValue);
-                    deceasedProfileService.createDeceasedProfile(user.getUserId(), dateOfDeath);
-                } catch (Exception e) {
-                    log.error("[OAuth2] 영면일 파싱 또는 저장 실패 - userId={}, input={}", user.getUserId(), dateOfDeathValue, e);
-                }
-            } else {
-                log.info("[OAuth2] 영면일 저장 생략 - userId={}", user.getUserId());
-            }
-
             log.info("[OAuth2] 로그인 성공 처리 완료 - userId: {}, redirectUri: {}",
                     user.getUserId(), redirectUri);
 
@@ -107,17 +93,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             log.error("[OAuth2] 로그인 성공 처리 중 서버 오류 발생", e);
             throw e;
         }
-    }
-
-    private String extractDateOfDeath(OAuth2AuthorizationRequest authorizationRequest) {
-        if (authorizationRequest == null) {
-            return null;
-        }
-
-        Object dateOfDeath =
-                authorizationRequest.getAdditionalParameters().get("date_of_death");
-
-        return dateOfDeath != null ? dateOfDeath.toString() : null;
     }
 
     private String extractRedirectUri(OAuth2AuthorizationRequest authorizationRequest) {
