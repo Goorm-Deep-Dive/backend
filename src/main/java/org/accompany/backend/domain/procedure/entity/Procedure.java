@@ -54,6 +54,9 @@ public class Procedure extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String cautionText;
 
+    @Column(nullable = false)
+    private Integer priority;
+
     @OneToMany(mappedBy = "procedure", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SurveyAnswerProcedure> surveyAnswerProcedures = new ArrayList<>();
 
@@ -76,7 +79,8 @@ public class Procedure extends BaseEntity {
             Integer dueDate,
             String dueDateDescription,
             String searchScope,
-            String cautionText
+            String cautionText,
+            Integer priority
     ) {
         this.procedureCategory = procedureCategory;
         this.procedureName = procedureName;
@@ -87,5 +91,6 @@ public class Procedure extends BaseEntity {
         this.dueDateDescription = dueDateDescription;
         this.searchScope = searchScope;
         this.cautionText = cautionText;
+        this.priority = priority;
     }
 }

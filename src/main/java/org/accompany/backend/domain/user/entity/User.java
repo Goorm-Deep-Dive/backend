@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -75,6 +76,10 @@ public class User extends BaseEntity {
 
     private LocalDateTime deletedAt;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "active_deceased_profile_id")
+    private DeceasedProfile activeDeceasedProfile;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DeceasedProfile> deceasedProfiles = new ArrayList<>();
 
@@ -139,9 +144,8 @@ public class User extends BaseEntity {
         this.isNotificationEnabled = isNotificationEnabled;
     }
 
-    public void updateStatus(UserStatus status) {
-        this.status = status;
-        this.deletedAt = status == UserStatus.DELETED ? LocalDateTime.now() : null;
+    public void updateActiveDeceasedProfile(DeceasedProfile activeDeceasedProfile) {
+        this.activeDeceasedProfile = activeDeceasedProfile;
     }
 
     public void withdraw() {

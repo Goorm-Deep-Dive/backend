@@ -2,7 +2,6 @@ package org.accompany.backend.domain.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.accompany.backend.domain.user.dto.response.UserProfileRes;
 import org.accompany.backend.domain.user.service.UserService;
@@ -11,7 +10,6 @@ import org.accompany.backend.global.response.ApiResponse;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,13 +33,13 @@ public class UserController {
         );
     }
 
-    @DeleteMapping("/me")
-    @Operation(summary = "소셜로그인 회원 탈퇴", description = "서비스 회원 탈퇴와 소셜로그인 연동을 끊습니다.")
-    public ResponseEntity<ApiResponse<Void>> withdraw(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            HttpServletResponse response
-    ) {
-        userService.withdraw(principal.getUserId(), response);
-        return ApiResponse.success(SuccessCode.OK);
-    }
+//    @DeleteMapping("/me")
+//    @Operation(summary = "소셜로그인 회원 탈퇴", description = "서비스 회원 탈퇴와 소셜로그인 연동을 끊습니다.")
+//    public ResponseEntity<ApiResponse<Void>> withdraw(
+//            @AuthenticationPrincipal CustomUserPrincipal principal,
+//            HttpServletResponse response
+//    ) {
+//        userService.withdraw(principal.getUserId(), response);
+//        return ApiResponse.success(SuccessCode.OK);
+//    }
 }

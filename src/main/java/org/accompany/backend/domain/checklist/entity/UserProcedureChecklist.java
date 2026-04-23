@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
 import org.accompany.backend.domain.procedure.entity.Procedure;
-import org.accompany.backend.domain.user.entity.DeceasedProfile;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 
 import java.time.LocalDateTime;
 

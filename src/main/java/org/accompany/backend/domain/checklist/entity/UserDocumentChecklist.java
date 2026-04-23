@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
 import org.accompany.backend.domain.procedure.entity.ProcedureDocument;
-import org.accompany.backend.domain.user.entity.DeceasedProfile;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 
 @Entity
 @Table(name = "user_document_checklists")
