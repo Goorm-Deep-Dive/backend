@@ -5,7 +5,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.service.UserAuthService;
+import org.accompany.backend.domain.user.service.UserService;
+import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.config.OAuth2Properties;
+import org.accompany.backend.global.exception.BusinessException;
+import org.accompany.backend.global.security.jwt.JwtCookieProvider;
+import org.accompany.backend.global.security.jwt.JwtTokenProvider;
 import org.accompany.backend.global.security.oauth.user.CustomOAuth2User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -31,9 +36,12 @@ import java.util.Map;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final UserAuthService userAuthService;
+    private final UserService userService;
     private final OAuth2AuthorizedClientService authorizedClientService;
     private final OAuth2Properties oauth2Properties;
     private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtCookieProvider jwtCookieProvider;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -67,6 +75,23 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     ? authorizedClient.getRefreshToken().getTokenValue()
                     : null;
 
+            if (isLinkGoogleRequest(authorizationRequest)) {
+                Long userId = extractUserIdFromRefreshToken(request);
+                String googleProviderUserId = extractGoogleProviderUserId(user);
+
+                userService.linkGoogleAccount(
+                        userId,
+                        googleProviderUserId,
+                        providerAccessToken,
+                        providerRefreshToken
+                );
+
+                log.info("[OAuth2] 구글 연동 성공 - userId: {}, redirectUri: {}", userId, redirectUri);
+
+                redirectToTarget(request, response, redirectUri, "google_link", "success");
+                return;
+            }
+
             userAuthService.loginSuccess(
                     user.getUserId(),
                     user.getRole(),
@@ -78,14 +103,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             log.info("[OAuth2] 로그인 성공 처리 완료 - userId: {}, redirectUri: {}",
                     user.getUserId(), redirectUri);
 
-            String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
-                    .queryParam("oauth", "success")
-                    .build(true)
-                    .toUriString();
-
-            clearAuthenticationAttributes(request);
-            authorizationRequestRepository.removeAuthorizationRequest(request, response);
-            getRedirectStrategy().sendRedirect(request, response, targetUrl);
+            redirectToTarget(request, response, redirectUri, "oauth", "success");
 
         } catch (Exception e) {
             log.error("[OAuth2] 로그인 성공 처리 중 서버 오류 발생", e);
@@ -113,6 +131,46 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         Object linkGoogle = attributes.get("link_google");
 
         return Boolean.TRUE.equals(linkGoogle);
+    }
+
+    private Long extractUserIdFromRefreshToken(HttpServletRequest request) {
+        String refreshToken = jwtCookieProvider.resolveRefreshToken(request);
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        }
+
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        return jwtTokenProvider.getUserId(refreshToken);
+    }
+
+
+    private String extractGoogleProviderUserId(CustomOAuth2User user) {
+        String providerUserId = user.getProviderUserId();
+
+        if (providerUserId == null || providerUserId.isBlank()) {
+            throw new IllegalArgumentException("구글 사용자 식별값이 없습니다.");
+        }
+
+        return providerUserId;
+    }
+
+    private void redirectToTarget(HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  String redirectUri,
+                                  String resultKey,
+                                  String resultValue) throws IOException {
+        String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
+                .queryParam(resultKey, resultValue)
+                .build(true)
+                .toUriString();
+
+        clearAuthenticationAttributes(request);
+        authorizationRequestRepository.removeAuthorizationRequest(request, response);
+        getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
     private boolean isAuthorizedRedirectUri(String uri) {

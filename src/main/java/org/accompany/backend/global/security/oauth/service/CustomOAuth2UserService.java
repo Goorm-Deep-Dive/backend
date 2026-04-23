@@ -45,7 +45,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         log.info("[OAuth2] 로그인 처리 완료 - userId: {}, newUser: {}", user.getUserId(), isNewUser);
 
-        return createPrincipal(user, isNewUser, oAuth2User);
+        return createPrincipal(user, providerUserId, isNewUser, oAuth2User);
     }
 
     private Provider getValidatedProvider(OAuth2UserRequest userRequest) {
@@ -105,11 +105,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
     }
 
-    private CustomOAuth2User createPrincipal(User user, boolean isNewUser, OAuth2User oAuth2User) {
+    private CustomOAuth2User createPrincipal(User user, String providerUserId, boolean isNewUser, OAuth2User oAuth2User) {
         return new CustomOAuth2User(
                 user.getUserId(),
                 user.getEmail(),
                 user.getRole(),
+                providerUserId,
                 isNewUser,
                 oAuth2User.getAttributes()
         );

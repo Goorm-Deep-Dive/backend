@@ -95,11 +95,6 @@ public class User extends BaseEntity {
             Role role,
             UserStatus status,
             Boolean isNotificationEnabled,
-            String providerAccessToken,
-            String providerRefreshToken,
-            String googleProviderUserId,
-            String googleAccessToken,
-            String googleRefreshToken,
             LocalDateTime deletedAt
     ) {
         this.provider = provider;
@@ -109,11 +104,6 @@ public class User extends BaseEntity {
         this.role = role != null ? role : Role.USER;
         this.status = status != null ? status : UserStatus.ACTIVE;
         this.isNotificationEnabled = isNotificationEnabled != null ? isNotificationEnabled : true;
-        this.providerAccessToken = providerAccessToken;
-        this.providerRefreshToken = providerRefreshToken;
-        this.googleProviderUserId = googleProviderUserId;
-        this.googleAccessToken = googleAccessToken;
-        this.googleRefreshToken = googleRefreshToken;
         this.deletedAt = deletedAt;
     }
 
@@ -161,18 +151,4 @@ public class User extends BaseEntity {
         this.googleRefreshToken = null;
     }
 
-    public void addDeceasedProfile(DeceasedProfile deceasedProfile) {
-        this.deceasedProfiles.add(deceasedProfile);
-        deceasedProfile.assignUser(this);
-    }
-
-    public void addRefreshToken(RefreshToken refreshToken) {
-        this.refreshTokens.add(refreshToken);
-        refreshToken.assignUser(this);
-    }
-
-    public void removeRefreshToken(RefreshToken refreshToken) {
-        this.refreshTokens.remove(refreshToken);
-        refreshToken.removeUser();
-    }
 }

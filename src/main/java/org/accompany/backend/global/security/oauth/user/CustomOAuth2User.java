@@ -16,17 +16,20 @@ public class CustomOAuth2User implements OAuth2User {
     private final Long userId;
     private final String email;
     private final Role role;
+    private final String providerUserId;
     private final boolean newUser;
     private final Map<String, Object> attributes;
 
     public CustomOAuth2User(Long userId,
                             String email,
                             Role role,
+                            String providerUserId,
                             boolean newUser,
                             Map<String, Object> attributes) {
         this.userId = userId;
         this.email = email;
         this.role = role;
+        this.providerUserId = providerUserId;
         this.newUser = newUser;
         this.attributes = attributes;
     }
