@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface DeceasedProfileRepository extends JpaRepository<DeceasedProfile, Long> {
     Optional<DeceasedProfile> findByUserUserId(Long userId);
     boolean existsByUserUserId(Long userId);
+    DeceasedProfile findByUser_UserId(Long userId);
+    DeceasedProfile findByDeceasedProfileIdAndUserUserId(Long profileId, Long userId);
 }
