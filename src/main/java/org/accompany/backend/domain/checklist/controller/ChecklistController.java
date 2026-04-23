@@ -35,25 +35,4 @@ public class ChecklistController {
 		);
 	}
 
-//
-//	/*
-//	유저가 고인의 프로필을 선택할 수 있어야한다.
-//
-//	 */
-//	@GetMapping("/categories/{categoryId}/procedures")
-//	@Operation(summary = "각 카테고리 별 체크리스트 목록 조회", description = "각 카테고리 별 체크리스트의 목록을 조회합니다.")
-//	public ResponseEntity<ApiResponse<ChecklistCategoryProcedureRes>> getCategoryProcedures(
-//			@PathVariable Long categoryId,
-//			@RequestParam Long profileId,
-//			@AuthenticationPrincipal CustomUserPrincipal principal
-//	) {
-//		return ApiResponse.success(
-//				SuccessCode.OK,
-//				checklistService.getCategoryProcedures(
-//						categoryId,
-//						profileId,
-//						principal.getUserId()
-//				)
-//		);
-//	}
 }
