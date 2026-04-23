@@ -11,5 +11,4 @@ public interface DeceasedProfileRepository extends JpaRepository<DeceasedProfile
     Optional<DeceasedProfile> findByDeceasedProfileIdAndUserUserId(Long deceasedProfileId, Long userId);
     Optional<DeceasedProfile> findByUserUserId(Long userId);
     boolean existsByUserUserId(Long userId);
-    DeceasedProfile findByUser_UserId(Long userId);
 }
