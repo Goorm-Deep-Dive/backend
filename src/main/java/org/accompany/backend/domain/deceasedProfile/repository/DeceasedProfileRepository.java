@@ -3,9 +3,10 @@ package org.accompany.backend.domain.deceasedProfile.repository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface DeceasedProfileRepository extends JpaRepository<DeceasedProfile, Long> {
-    Optional<DeceasedProfile> findByUserUserId(Long userId);
-    boolean existsByUserUserId(Long userId);
+    List<DeceasedProfile> findAllByUserUserIdOrderByDateOfDeathDescCreatedAtDesc(Long userId);
+    Optional<DeceasedProfile> findByDeceasedProfileIdAndUserUserId(Long deceasedProfileId, Long userId);
 }

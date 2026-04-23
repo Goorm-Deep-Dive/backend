@@ -52,8 +52,13 @@ public class DeceasedProfile extends BaseEntity {
     }
 
     public void updateDeceasedProfile(String name, LocalDate dateOfDeath) {
-        this.name = name;
-        this.dateOfDeath = dateOfDeath;
+        if (name != null) {
+            this.name = name;
+        }
+
+        if (dateOfDeath != null) {
+            this.dateOfDeath = dateOfDeath;
+        }
     }
 
     public void updateStatus(SurveyStatus surveyStatus) {
