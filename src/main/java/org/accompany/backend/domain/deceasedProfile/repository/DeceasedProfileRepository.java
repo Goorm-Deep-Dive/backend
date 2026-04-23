@@ -9,4 +9,7 @@ import java.util.Optional;
 public interface DeceasedProfileRepository extends JpaRepository<DeceasedProfile, Long> {
     List<DeceasedProfile> findAllByUserUserIdOrderByDateOfDeathDescCreatedAtDesc(Long userId);
     Optional<DeceasedProfile> findByDeceasedProfileIdAndUserUserId(Long deceasedProfileId, Long userId);
+    Optional<DeceasedProfile> findByUserUserId(Long userId);
+    boolean existsByUserUserId(Long userId);
+    DeceasedProfile findByUser_UserId(Long userId);
 }
