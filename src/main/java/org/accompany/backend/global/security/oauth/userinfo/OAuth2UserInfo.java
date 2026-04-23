@@ -13,12 +13,11 @@ public interface OAuth2UserInfo {
     String getEmail();
     String getName();
 
-    static OAuth2UserInfo of(String registrationId, Map<String, Object> attributes) {
-        return switch (registrationId) {
-            case "google" -> new GoogleOAuth2UserInfo(attributes);
-            case "kakao" -> new KakaoOAuth2UserInfo(attributes);
-            case "naver" -> new NaverOAuth2UserInfo(attributes);
-            default -> throw new IllegalArgumentException("지원하지 않는 소셜 로그인: " + registrationId);
+    static OAuth2UserInfo of(Provider provider, Map<String, Object> attributes) {
+        return switch (provider) {
+            case GOOGLE -> new GoogleOAuth2UserInfo(attributes);
+            case KAKAO -> new KakaoOAuth2UserInfo(attributes);
+            case NAVER -> new NaverOAuth2UserInfo(attributes);
         };
     }
 }

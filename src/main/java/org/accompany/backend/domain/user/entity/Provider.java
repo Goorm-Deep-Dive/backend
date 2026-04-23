@@ -13,7 +13,11 @@ public enum Provider {
 
     private final String label;
 
-    public static Provider from(String registrationId) {
-        return Provider.valueOf(registrationId.toUpperCase());
+    public static Provider fromRegistrationId(String registrationId) {
+        try {
+            return Provider.valueOf(registrationId.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("지원하지 않는 소셜 로그인: " + registrationId, e);
+        }
     }
 }

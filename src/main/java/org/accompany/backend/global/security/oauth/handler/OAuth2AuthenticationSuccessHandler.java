@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.accompany.backend.domain.deceasedProfile.service.DeceasedProfileService;
 import org.accompany.backend.domain.user.service.UserAuthService;
 import org.accompany.backend.global.config.OAuth2Properties;
 import org.accompany.backend.global.security.oauth.user.CustomOAuth2User;
@@ -35,7 +34,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final OAuth2AuthorizedClientService authorizedClientService;
     private final OAuth2Properties oauth2Properties;
     private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
-    private final DeceasedProfileService deceasedProfileService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
