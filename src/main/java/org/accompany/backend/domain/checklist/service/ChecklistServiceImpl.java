@@ -4,11 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.dto.ProcedureChecklistQueryDto;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryProcedureRes;
+import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryProgressRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryRes;
+import org.accompany.backend.domain.checklist.dto.response.ChecklistOverallProgressRes;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.procedure.entity.ProcedureCategory;
 import org.accompany.backend.domain.procedure.repository.ProcedureCategoryRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
+import org.accompany.backend.domain.procedure.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
@@ -29,6 +32,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 	private final ProcedureCategoryRepository procedureCategoryRepository;
 	private final ProcedureRepository procedureRepository;
 	private final UserRepository userRepository;
+	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
 
 
 	@Override
@@ -131,5 +135,50 @@ public class ChecklistServiceImpl implements ChecklistService {
 		LocalDate target = dueDate.toLocalDate();
 
 		return (int) ChronoUnit.DAYS.between(today, target);
+	}
+
+	@Override
+	public ChecklistOverallProgressRes getOverallProgress(Long userId) {
+
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+
+		Long deceasedProfileId = profile.getDeceasedProfileId();
+
+		List<ChecklistCategoryProgressRes> checklistCategoryProgressResList
+				= userProcedureChecklistRepository.findCategoryProgresses(deceasedProfileId);
+
+		int totalCount = checklistCategoryProgressResList.stream()
+				.mapToInt(ChecklistCategoryProgressRes::totalCount)
+				.sum();
+
+		int completedCount = checklistCategoryProgressResList.stream()
+				.mapToInt(ChecklistCategoryProgressRes::completedCount)
+				.sum();
+
+		int progressRate = totalCount == 0 ? 0 : (completedCount * 100) / totalCount;
+
+		List<ChecklistCategoryProgressRes> categories = checklistCategoryProgressResList.stream()
+				.map(category -> new ChecklistCategoryProgressRes(
+						category.categoryId(),
+						category.categoryName(),
+						category.totalCount() == 0 ? 0 : (category.completedCount() * 100) / category.totalCount(),
+						category.totalCount(),
+						category.completedCount()
+				))
+				.toList();
+
+		return new ChecklistOverallProgressRes(
+				progressRate,
+				totalCount,
+				completedCount,
+				categories
+		);
 	}
 }

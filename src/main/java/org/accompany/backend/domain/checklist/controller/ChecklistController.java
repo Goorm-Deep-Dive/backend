@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryProcedureRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryRes;
+import org.accompany.backend.domain.checklist.dto.response.ChecklistOverallProgressRes;
 import org.accompany.backend.domain.checklist.service.ChecklistService;
 import org.accompany.backend.domain.user.service.UserService;
 import org.accompany.backend.global.code.SuccessCode;
@@ -14,7 +15,10 @@ import org.accompany.backend.global.response.ApiResponse;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 
 @Tag(name = "Checklist API", description = "체크리스트 API")
@@ -52,6 +56,17 @@ public class ChecklistController {
 						categoryId,
 						principal.getUserId()
 				)
+		);
+	}
+
+	@GetMapping("/progress")
+	@Operation(summary = "전체 진행률 조회", description = "전체 진행률 및 카테고리별 진행률을 조회합니다.")
+	public ResponseEntity<ApiResponse<ChecklistOverallProgressRes>> getOverallProgress(
+			@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
+		return ApiResponse.success(
+				SuccessCode.OK,
+				checklistService.getOverallProgress(principal.getUserId())
 		);
 	}
 
