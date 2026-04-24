@@ -85,7 +85,6 @@ public class SurveyServiceImpl implements SurveyService {
 
         deceasedProfile.updateStatus(SurveyStatus.SKIPPED);
 
-
         List<Procedure> allProcedures = procedureRepository.findAllWithDocuments();
 
         List<UserProcedureChecklist> procedureChecklists = allProcedures.stream()

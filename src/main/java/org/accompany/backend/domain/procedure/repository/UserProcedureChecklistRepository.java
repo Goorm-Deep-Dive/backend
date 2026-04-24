@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserProcedureChecklistRepository extends JpaRepository<UserProcedureChecklist, Long> {
@@ -28,4 +29,7 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
         order by pc.procedureCategoryId asc
     """)
     List<ChecklistCategoryProgressRes> findCategoryProgresses(@Param("profileId") Long profileId);
+
+    Optional<UserProcedureChecklist> findByProcedureProcedureIdAndDeceasedProfileDeceasedProfileId(Long procedureId, Long profileId);
+
 }
