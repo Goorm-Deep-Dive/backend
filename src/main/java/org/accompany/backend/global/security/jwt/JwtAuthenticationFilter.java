@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.entity.Role;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -48,6 +49,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                log.info("JwtAuthenticationFilter_auth = {}", auth);
+                log.info("JwtAuthenticationFilter_auth.getPrincipal() = {}", auth.getPrincipal());
             }
 
         } catch (Exception e) {
