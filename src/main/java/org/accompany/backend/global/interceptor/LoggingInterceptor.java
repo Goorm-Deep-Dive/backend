@@ -3,6 +3,9 @@ package org.accompany.backend.global.interceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.global.security.principal.CustomUserPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -85,17 +88,17 @@ public class LoggingInterceptor implements HandlerInterceptor {
     }
 
     private Long extractUserId(HttpServletRequest request) {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            return null;
-//        }
-//
-//        Object principal = authentication.getPrincipal();
-//
-//        if (principal instanceof CustomUser customUser) {
-//            return customUser.getUserId();
-//        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof CustomUserPrincipal customUser) {
+            return customUser.getUserId();
+        }
 
         return null;
     }
