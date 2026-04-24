@@ -26,8 +26,6 @@ public class SurveyResponse extends BaseEntity {
     @JoinColumn(name = "survey_answer_id", nullable = false)
     private SurveyAnswer surveyAnswer;
 
-    //TODO: SurveyQuestionId
-
     @Builder
     private SurveyResponse(
             DeceasedProfile deceasedProfile,
@@ -39,5 +37,5 @@ public class SurveyResponse extends BaseEntity {
 
     public void update(SurveyAnswer surveyAnswer) {
         this.surveyAnswer = surveyAnswer;
-    } //TODO: SurveyResponse
+    }
 }

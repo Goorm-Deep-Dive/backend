@@ -8,9 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryProcedureRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistOverallProgressRes;
+import org.accompany.backend.domain.checklist.dto.response.ChecklistProcedureDetailRes;
 import org.accompany.backend.domain.checklist.service.ChecklistService;
 import org.accompany.backend.domain.user.service.UserService;
+import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.code.SuccessCode;
+import org.accompany.backend.global.exception.BusinessException;
 import org.accompany.backend.global.response.ApiResponse;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.ResponseEntity;
@@ -29,11 +32,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChecklistController {
 
 	private final ChecklistService checklistService;
-	private final UserService userService;
 
-	@SecurityRequirement(name = "BearerAuth")
+//	@SecurityRequirement(name = "BearerAuth")
 	@GetMapping("/categories")
-	@Operation(summary = "카테고리 목록 조회", description = "체크리스트의 카테고리 목록을 조회합니다.")
+	@Operation(summary = "카테고리 목록 조회", description = "각 절차의 카테고리 목록을 조회합니다.")
 	public ResponseEntity<ApiResponse<ChecklistCategoryRes>> getCategories() {
 		return ApiResponse.success(
 				SuccessCode.OK,
@@ -41,7 +43,7 @@ public class ChecklistController {
 		);
 	}
 
-	//getCategoryProcedures 1
+	@Operation(summary = "카테고리별 체크리스트 조회", description = "각 카테고리의 체크리스트 목록을 조회합니다.")
 	@GetMapping("/categories/{categoryId}/procedures")
 	public ResponseEntity<ApiResponse<ChecklistCategoryProcedureRes>> getCategoryProcedures(
 			@PathVariable Long categoryId,
@@ -59,6 +61,23 @@ public class ChecklistController {
 		);
 	}
 
+	//v2
+	@GetMapping("/procedures/{procedureId}")
+	@Operation(
+			summary = "카테고리별 체크리스트 상세 정보 조회",
+			description = "각 카테고리의 체크리스트 상세 정보를 조회합니다."
+	)
+	public ResponseEntity<ApiResponse<ChecklistProcedureDetailRes>> getProcedureDetail(
+			@PathVariable Long procedureId,
+			@AuthenticationPrincipal(expression = "userId") Long userId
+	) {
+
+		return ApiResponse.success(
+				SuccessCode.OK,
+				checklistService.getProcedureDetail(procedureId, userId)
+		);
+	}
+
 	@GetMapping("/progress")
 	@Operation(summary = "전체 진행률 조회", description = "전체 진행률 및 카테고리별 진행률을 조회합니다.")
 	public ResponseEntity<ApiResponse<ChecklistOverallProgressRes>> getOverallProgress(
@@ -69,5 +88,7 @@ public class ChecklistController {
 				checklistService.getOverallProgress(principal.getUserId())
 		);
 	}
+
+
 
 }
