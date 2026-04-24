@@ -140,6 +140,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 	@Override
 	public ChecklistOverallProgressRes getOverallProgress(Long userId) {
 
+		log.info("[CheckList] 전체 진행률 조회 시작 - userId = {}", userId);
+
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -173,6 +175,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 						category.completedCount()
 				))
 				.toList();
+
+		log.info("[CheckList] 전체 진행률 조회 완료 - userId = {}, totalCount = {}",  userId, totalCount);
 
 		return new ChecklistOverallProgressRes(
 				progressRate,
