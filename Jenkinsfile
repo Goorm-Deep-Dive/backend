@@ -66,5 +66,106 @@ pipeline {
                 }
             }
         }
+        stage('Health Check') {
+            steps {
+                script {
+                    def maxRetry = 10
+                    def success = false
+
+                    for(int i = 0; i < maxRetry; i++) {
+                        def status = sh(
+                            script: "curl -s http://3.37.170.214:8090/actuator/health | grep UP || true",
+                            returnStdout : true
+                        ).trim()
+
+                        if(status.contains("UP")) {
+                            success = true
+                            echo "Health Check 성공"
+                            break
+                        }
+
+                        echo "Health Check 재시도 중... (${i+1}/${maxRetry})"
+                        sleep 5
+                    }
+
+                    if(!success) {
+                        error("Health Check 실패")
+                    }
+
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                def author = sh(
+                    script: "git log -1 --pretty=format:'%an'",
+                    returnStdout: true
+                ).trim()
+
+                def message = sh(
+                    script: "git log -1 --pretty=format:'%s'",
+                    returnStdout: true
+                ).trim()
+
+                def duration = currentBuild.durationString
+                    .replace(' and counting', '')
+
+                withCredentials([
+                    string(credentialsId: 'discord-webhook', variable: 'DISCORD_WEBHOOK')
+                ]) {
+
+                    writeFile file: 'discord-success.json', text: """
+                    {
+                      "content": "✅ 배포 성공\\n작성자: ${author}\\n커밋: ${message}\\n실행 시간: ${duration}\\n빌드 번호: #${BUILD_NUMBER}\\nURL: ${BUILD_URL}"
+                    }
+                    """
+
+                    sh '''
+                    curl -H "Content-Type: application/json" \
+                         -X POST \
+                         -d @discord-success.json \
+                         "$DISCORD_WEBHOOK"
+                    '''
+                }
+            }
+        }
+
+        failure {
+            script {
+                def author = sh(
+                    script: "git log -1 --pretty=format:'%an' || echo unknown",
+                    returnStdout: true
+                ).trim()
+
+                def message = sh(
+                    script: "git log -1 --pretty=format:'%s' || echo unknown",
+                    returnStdout: true
+                ).trim()
+
+                def duration = currentBuild.durationString
+                    .replace(' and counting', '')
+
+                withCredentials([
+                    string(credentialsId: 'discord-webhook', variable: 'DISCORD_WEBHOOK')
+                ]) {
+
+                    writeFile file: 'discord-failure.json', text: """
+                    {
+                      "content": "❌ 배포 실패\\n작성자: ${author}\\n커밋: ${message}\\n실행 시간: ${duration}\\n빌드 번호: #${BUILD_NUMBER}\\nURL: ${BUILD_URL}"
+                    }
+                    """
+
+                    sh '''
+                    curl -H "Content-Type: application/json" \
+                         -X POST \
+                         -d @discord-failure.json \
+                         "$DISCORD_WEBHOOK"
+                    '''
+                }
+            }
+        }
     }
 }
