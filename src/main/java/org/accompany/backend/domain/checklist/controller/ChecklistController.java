@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryProcedureRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryRes;
 import org.accompany.backend.domain.checklist.service.ChecklistService;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @Tag(name = "Checklist API", description = "체크리스트 API")
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/checklists")
@@ -32,6 +34,24 @@ public class ChecklistController {
 		return ApiResponse.success(
 				SuccessCode.OK,
 				checklistService.getCategories()
+		);
+	}
+
+	//getCategoryProcedures 1
+	@GetMapping("/categories/{categoryId}/procedures")
+	public ResponseEntity<ApiResponse<ChecklistCategoryProcedureRes>> getCategoryProcedures(
+			@PathVariable Long categoryId,
+			@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
+
+		log.debug("ChecklistController.getCategoryProcedures, {}", principal);
+
+		return ApiResponse.success(
+				SuccessCode.OK,
+				checklistService.getCategoryProcedures(
+						categoryId,
+						principal.getUserId()
+				)
 		);
 	}
 
