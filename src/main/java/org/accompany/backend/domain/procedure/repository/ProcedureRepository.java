@@ -34,6 +34,8 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
 			@Param("categoryId") Long categoryId,
 			@Param("profileId") Long profileId
 	);
+	@Query("select distinct p from Procedure p left join fetch p.procedureDocuments")
+	List<Procedure> findAllWithDocuments();
 }
 
 
