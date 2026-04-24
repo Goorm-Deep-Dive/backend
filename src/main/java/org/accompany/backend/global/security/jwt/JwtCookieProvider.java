@@ -1,10 +1,11 @@
 package org.accompany.backend.global.security.jwt;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,20 +22,27 @@ public class JwtCookieProvider {
     @Value("${jwt.cookie.refresh-token-max-age}")
     private int refreshTokenMaxAge;
 
+    @Value("${jwt.cookie.secure}")
+    private boolean secure;
+
+    @Value("${jwt.cookie.same-site}")
+    private String sameSite;
+
     /**
      * RefreshToken 쿠키 생성
      */
     public void createRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
 
         try {
-            Cookie cookie = new Cookie(refreshTokenCookieName, refreshToken);
+            ResponseCookie cookie = ResponseCookie.from(refreshTokenCookieName, refreshToken)
+                    .httpOnly(true)
+                    .secure(secure) // 개발 환경 기준
+                    .path("/")
+                    .maxAge(refreshTokenMaxAge)
+                    .sameSite(sameSite)
+                    .build();
 
-            cookie.setHttpOnly(true);
-            cookie.setSecure(false); // 개발 환경(http) 기준
-            cookie.setPath("/");
-            cookie.setMaxAge(refreshTokenMaxAge);
-
-            response.addCookie(cookie);
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         } catch (Exception e) {
             log.warn("[JWT] RefreshToken 쿠키 생성 실패: {}", e.getMessage());
@@ -47,14 +55,15 @@ public class JwtCookieProvider {
     public void deleteRefreshTokenCookie(HttpServletResponse response) {
 
         try {
-            Cookie cookie = new Cookie(refreshTokenCookieName, null);
+            ResponseCookie cookie = ResponseCookie.from(refreshTokenCookieName, "")
+                    .httpOnly(true)
+                    .secure(secure)
+                    .path("/")
+                    .maxAge(0)
+                    .sameSite(sameSite)
+                    .build();
 
-            cookie.setHttpOnly(true);
-            cookie.setSecure(false); // 개발 환경(http) 기준
-            cookie.setPath("/");
-            cookie.setMaxAge(0);
-
-            response.addCookie(cookie);
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         } catch (Exception e) {
             log.warn("[JWT] RefreshToken 쿠키 삭제 실패: {}", e.getMessage());
@@ -71,7 +80,7 @@ public class JwtCookieProvider {
         }
 
         try {
-            for (Cookie cookie : request.getCookies()) {
+            for (var cookie : request.getCookies()) {
                 if (refreshTokenCookieName.equals(cookie.getName())) {
                     return cookie.getValue();
                 }

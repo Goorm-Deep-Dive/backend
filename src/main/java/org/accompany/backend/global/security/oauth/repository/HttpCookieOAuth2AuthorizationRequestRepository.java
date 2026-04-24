@@ -3,18 +3,29 @@ package org.accompany.backend.global.security.oauth.repository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
 import java.util.Base64;
 import java.util.Optional;
 
+@Component
 public class HttpCookieOAuth2AuthorizationRequestRepository
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
     public static final String OAUTH2_AUTH_REQUEST_COOKIE_NAME = "oauth2_auth_request";
     private static final int COOKIE_EXPIRE_SECONDS = 180;
+
+    @Value("${jwt.cookie.secure}")
+    private boolean secure;
+
+    @Value("${jwt.cookie.same-site}")
+    private String sameSite;
 
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
@@ -35,17 +46,19 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
             return;
         }
 
-        Cookie cookie = new Cookie(
-                OAUTH2_AUTH_REQUEST_COOKIE_NAME,
-                serialize(authorizationRequest)
-        );
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(COOKIE_EXPIRE_SECONDS);
-        // HTTPS 환경이면 true 권장
-        // cookie.setSecure(true);
+        String serializedAuthorizationRequest = serialize(authorizationRequest);
+        ResponseCookie responseCookie = ResponseCookie.from(
+                        OAUTH2_AUTH_REQUEST_COOKIE_NAME,
+                        serializedAuthorizationRequest
+                )
+                .httpOnly(true)
+                .secure(secure)
+                .path("/")
+                .maxAge(COOKIE_EXPIRE_SECONDS)
+                .sameSite(sameSite)
+                .build();
 
-        response.addCookie(cookie);
+        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
     }
 
     @Override
@@ -73,10 +86,14 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
     }
 
     private void deleteCookie(HttpServletResponse response, String name) {
-        Cookie cookie = new Cookie(name, null);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(secure)
+                .path("/")
+                .maxAge(0)
+                .sameSite(sameSite)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private String serialize(OAuth2AuthorizationRequest authorizationRequest) {
