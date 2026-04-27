@@ -39,6 +39,9 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 	@Override
 	public ChecklistCategoryRes getCategories() {
+
+		log.info("getCategories start");
+
 		List<ChecklistCategoryRes.Category> categories =
 				procedureCategoryRepository.findAll().stream()
 						.map(c -> new ChecklistCategoryRes.Category(
@@ -46,6 +49,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 								c.getCategoryName()
 						))
 						.toList();
+
+		log.info("getCategories end - count={}", categories.size());
 
 		return new ChecklistCategoryRes(categories);
 	}
@@ -55,11 +60,12 @@ public class ChecklistServiceImpl implements ChecklistService {
 			Long categoryId,
 			Long userId
 	) {
+
+		log.info("[Checklist] getCategoryProcedures START - categoryId={}, userId={}", categoryId, userId);
+
 		// 1. user 조회
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-		log.debug("getCategoryProcedures {}", user.getUserId());
 
 		// 2. active profile 꺼내기
 		DeceasedProfile profile = user.getActiveDeceasedProfile();
@@ -81,8 +87,10 @@ public class ChecklistServiceImpl implements ChecklistService {
 		// 5. DTO 변환
 		List<ChecklistCategoryProcedureRes.Procedure> procedures =
 				rows.stream()
-						.map(dto -> toProcedureRes(dto, profile))
+						.map(this::toProcedureRes)
 						.toList();
+
+		log.info("[Checklist] getCategoryProcedures END - categoryId={}, profileId={}, count={}", categoryId, profileId, procedures.size() );
 
 		return new ChecklistCategoryProcedureRes(
 				category.getProcedureCategoryId(),
@@ -91,35 +99,11 @@ public class ChecklistServiceImpl implements ChecklistService {
 		);
 	}
 
-	private LocalDateTime calculateDueDate(
-			ProcedureChecklistQueryDto dto,
-			DeceasedProfile profile
-	) {
-		if (dto.baseDueDate() == null || dto.dueDateUnit() == null) {
-			return null;
-		}
-
-		LocalDateTime base = profile.getDateOfDeath().atStartOfDay();
-		int amount = dto.baseDueDate();
-
-		return switch (dto.dueDateUnit()) {
-			case DAY -> base.plusDays(amount);
-			case MONTH -> base.plusMonths(amount);
-			case YEAR -> base.plusYears(amount);
-		};
-	}
-
-
 	private ChecklistCategoryProcedureRes.Procedure toProcedureRes(
-			ProcedureChecklistQueryDto dto,
-			DeceasedProfile profile
+			ProcedureChecklistQueryDto dto
 	) {
 
 		LocalDateTime dueDate = dto.dueDate();
-
-		if (dueDate == null) {
-			dueDate = calculateDueDate(dto, profile);
-		}
 
 		return new ChecklistCategoryProcedureRes.Procedure(
 				dto.userProcedureChecklistId(),
@@ -226,6 +210,10 @@ public class ChecklistServiceImpl implements ChecklistService {
 						})
 						.toList();
 
+		log.info( "[Checklist] getProcedureDetail END - procedureId={}, channels={}, contacts={}, documents={}, checked={}",
+				procedureId, channels.size(), contacts.size(), documents.size(), checklist != null && checklist.isChecked()
+		);
+
 		return new ChecklistProcedureDetailRes(
 				checklist != null ? checklist.getUserProcedureChecklistId() : null,
 				procedure.getProcedureId(),
@@ -298,7 +286,9 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 	@Override
 	@Transactional
-	public void modifyProcedureCheck(Long checklistId, Long userId, boolean isChecked) {
+	public void modifyProcedureCheck(Long userProcedureChecklistId, Long userId, boolean isChecked) {
+
+		log.info( "[Checklist] modifyProcedureCheck START - userProcedureChecklistId={}, userId={}, isChecked={}", userProcedureChecklistId, userId, isChecked );
 
 		// 1. user 조회
 		User user = userRepository.findById(userId)
@@ -312,7 +302,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 		// 3. checklist 조회
 		UserProcedureChecklist checklist = userProcedureChecklistRepository
-				.findByUserProcedureChecklistId(checklistId)
+				.findByUserProcedureChecklistId(userProcedureChecklistId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
 
 		// 4. 권한 체크 (중요)
@@ -323,11 +313,16 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 		// 5. 상태 변경
 		checklist.updateCheck(isChecked);
+
+		log.info( "[Checklist] modifyProcedureCheck END - userProcedureChecklistId={}, changedTo={}", userProcedureChecklistId,   checklist.isChecked() );
+
 	}
 
 	@Override
 	@Transactional
 	public void modifyDocumentCheck(Long procedureDocumentId, Long userId, boolean isChecked) {
+
+		log.info( "[Checklist] modifyDocumentCheck START - procedureDocumentId={}, userId={}, isChecked={}", procedureDocumentId, userId, isChecked);
 
 		// 1. user 조회
 		User user = userRepository.findById(userId)
@@ -361,6 +356,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 		// 5. 상태 변경
 		checklist.updateChecked(isChecked);
+
+		log.info( "[Checklist] modifyDocumentCheck END - procedureDocumentId={}, changedTo={}", procedureDocumentId, checklist.isChecked() );
 	}
 
 
