@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
+import org.accompany.backend.domain.procedure.entity.DueDateType;
+import org.accompany.backend.domain.procedure.entity.DueDateUnit;
 import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.repository.ChecklistBulkRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
@@ -21,6 +23,8 @@ import org.accompany.backend.global.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -85,10 +89,13 @@ public class SurveyServiceImpl implements SurveyService {
 
         deceasedProfile.updateStatus(SurveyStatus.SKIPPED);
 
+        LocalDate dateOfDeath = deceasedProfile.getDateOfDeath();
+
         List<Procedure> allProcedures = procedureRepository.findAllWithDocuments();
 
         List<UserProcedureChecklist> procedureChecklists = allProcedures.stream()
                 .map(procedure -> UserProcedureChecklist.builder()
+                        .dueDate(calculateDueDate(procedure, dateOfDeath))
                         .deceasedProfile(deceasedProfile)
                         .procedure(procedure)
                         .isCheck(false)
@@ -105,9 +112,33 @@ public class SurveyServiceImpl implements SurveyService {
                 .toList();
 
         checklistBulkRepository.bulkInsertProcedureChecklists(procedureChecklists);
-        checklistBulkRepository.bulkInsertDocumentCheklists(documentChecklists);
+        checklistBulkRepository.bulkInsertDocumentChecklists(documentChecklists);
 
         log.info("[Survey] 설문조사 스킵 완료 - userId={}, deceasedProfilelId={}, 생성된 체크리스트 수 ={}",
                 userId, deceasedProfile.getDeceasedProfileId(), allProcedures.size());
+    }
+    private LocalDateTime calculateDueDate(Procedure procedure, LocalDate dateOfDeath) {
+        DueDateType type = procedure.getDueDateType();
+        DueDateUnit unit = procedure.getDueDateUnit();
+        Integer dueDate = procedure.getDueDate();
+
+        return switch(type) {
+            case IMMEDIATE -> dateOfDeath.atStartOfDay();
+            case RELATIVE -> addDuration(dateOfDeath, unit, dueDate).atStartOfDay();
+            case DEATH_MONTH -> dateOfDeath.withDayOfMonth(1).plusMonths(1).minusDays(1).atStartOfDay();
+            case DEATH_END_DAY -> {
+                LocalDate endOfMonth = dateOfDeath.withDayOfMonth(1).plusMonths(1).minusDays(1);
+                yield addDuration(endOfMonth, unit, dueDate).atStartOfDay();
+            }
+            case NONE -> null;
+        };
+    }
+
+    private LocalDate addDuration(LocalDate base, DueDateUnit unit, Integer amount) {
+        return switch (unit) {
+            case YEAR -> base. plusYears(amount);
+            case MONTH -> base.plusMonths(amount);
+            case DAY -> base.plusDays(amount);
+        };
     }
 }
