@@ -1,16 +1,15 @@
 package org.accompany.backend.domain.checklist.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.checklist.dto.request.ChecklistCheckReq;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryProcedureRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistOverallProgressRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistProcedureDetailRes;
 import org.accompany.backend.domain.checklist.service.ChecklistService;
-import org.accompany.backend.domain.user.service.UserService;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.code.SuccessCode;
 import org.accompany.backend.global.exception.BusinessException;
@@ -18,10 +17,7 @@ import org.accompany.backend.global.response.ApiResponse;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @Tag(name = "Checklist API", description = "체크리스트 API")
@@ -61,7 +57,6 @@ public class ChecklistController {
 		);
 	}
 
-	//v2
 	@GetMapping("/procedures/{procedureId}")
 	@Operation(
 			summary = "카테고리별 체크리스트 상세 정보 조회",
@@ -69,12 +64,12 @@ public class ChecklistController {
 	)
 	public ResponseEntity<ApiResponse<ChecklistProcedureDetailRes>> getProcedureDetail(
 			@PathVariable Long procedureId,
-			@AuthenticationPrincipal(expression = "userId") Long userId
+			@AuthenticationPrincipal CustomUserPrincipal principal
 	) {
 
 		return ApiResponse.success(
 				SuccessCode.OK,
-				checklistService.getProcedureDetail(procedureId, userId)
+				checklistService.getProcedureDetail(procedureId, principal.getUserId())
 		);
 	}
 
@@ -89,6 +84,38 @@ public class ChecklistController {
 		);
 	}
 
+	@Operation(summary = "과업 체크리스트 is_checked 상태 변경", description = "각 절차의 체크리스트 상태를 변경합니다.")
+	@PatchMapping("/procedures/{checklistId}")
+	public ResponseEntity<ApiResponse<Void>> modifyProcedureCheck(
+			@PathVariable Long checklistId, //userProcedureChecklistId
+			@RequestBody ChecklistCheckReq req,
+			@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
 
+		checklistService.modifyProcedureCheck(
+				checklistId,
+				principal.getUserId(),
+				req.isChecked()
+		);
+
+		return ApiResponse.success(SuccessCode.USER_PROCEDURE_CHECKLIST_UPDATED);
+	}
+
+	@Operation(summary = "문서 체크리스트 is_checked 상태 변경", description = "각 문서의 체크리스트 상태를 변경합니다.")
+	@PatchMapping("/documents/{procedureDocumentId}")
+	public ResponseEntity<ApiResponse<Void>> modifyDocumentCheck(
+			@PathVariable Long procedureDocumentId,
+			@RequestBody ChecklistCheckReq req,
+			@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
+
+		checklistService.modifyDocumentCheck(
+				procedureDocumentId,
+				principal.getUserId(),
+				req.isChecked()
+		);
+
+		return ApiResponse.success(SuccessCode.USER_DOCUMENT_CHECKLIST_UPDATED);
+	}
 
 }

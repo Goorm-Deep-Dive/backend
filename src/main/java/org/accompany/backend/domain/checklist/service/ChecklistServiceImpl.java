@@ -12,7 +12,7 @@ import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.entity.ProcedureCategory;
 import org.accompany.backend.domain.procedure.repository.ProcedureCategoryRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
-import org.accompany.backend.domain.procedure.repository.UserProcedureChecklistRepository;
+import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
@@ -241,7 +241,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 				contacts,
 				documents,
 
-				checklist != null && checklist.isCheck()
+				checklist != null && checklist.isChecked()
 		);
 
 	}
@@ -295,4 +295,73 @@ public class ChecklistServiceImpl implements ChecklistService {
 				categories
 		);
 	}
+
+	@Override
+	@Transactional
+	public void modifyProcedureCheck(Long checklistId, Long userId, boolean isChecked) {
+
+		// 1. user 조회
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		// 2. active profile
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+
+		// 3. checklist 조회
+		UserProcedureChecklist checklist = userProcedureChecklistRepository
+				.findByUserProcedureChecklistId(checklistId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
+
+		// 4. 권한 체크 (중요)
+		if (!checklist.getDeceasedProfile().getDeceasedProfileId()
+				.equals(profile.getDeceasedProfileId())) {
+			throw new BusinessException(ErrorCode.PROFILE_ACCESS_DENIED);
+		}
+
+		// 5. 상태 변경
+		checklist.updateCheck(isChecked);
+	}
+
+	@Override
+	@Transactional
+	public void modifyDocumentCheck(Long procedureDocumentId, Long userId, boolean isChecked) {
+
+		// 1. user 조회
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		// 2. active profile 조회
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+
+		Long profileId = profile.getDeceasedProfileId();
+
+		// 3. 문서 체크리스트 조회
+		UserDocumentChecklist checklist =
+				userDocumentChecklistRepository
+						.findByProcedureDocumentProcedureDocumentIdAndDeceasedProfileDeceasedProfileId(
+								procedureDocumentId,
+								profileId
+						)
+						.orElseThrow(() ->
+								new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND)
+						);
+
+		// 4. 권한 체크
+		if (!checklist.getDeceasedProfile().getDeceasedProfileId()
+				.equals(profile.getDeceasedProfileId())) {
+			throw new BusinessException(ErrorCode.PROFILE_ACCESS_DENIED);
+		}
+
+		// 5. 상태 변경
+		checklist.updateChecked(isChecked);
+	}
+
+
 }

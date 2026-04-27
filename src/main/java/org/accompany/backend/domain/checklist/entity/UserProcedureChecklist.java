@@ -30,7 +30,7 @@ public class UserProcedureChecklist extends BaseEntity {
     private Procedure procedure;
 
     @Column(nullable = false)
-    private boolean isCheck = false;
+    private boolean isChecked = false;
 
     private LocalDateTime dueDate;
 
@@ -39,18 +39,17 @@ public class UserProcedureChecklist extends BaseEntity {
     public UserProcedureChecklist(
             DeceasedProfile deceasedProfile,
             Procedure procedure,
-            boolean isCheck,
+            boolean isChecked,
             LocalDateTime dueDate
     ) {
         this.deceasedProfile = deceasedProfile;
         this.procedure = procedure;
-        this.isCheck = isCheck;
+        this.isChecked = isChecked;
         this.dueDate = dueDate;
     }
 
-
-    public void updateCheck(boolean isCheck) {
-        this.isCheck = isCheck;
+    public void updateCheck(boolean isChecked) {
+        this.isChecked = isChecked;
     }
 
     public void updateDueDate(LocalDateTime dueDate) {
