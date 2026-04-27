@@ -16,8 +16,8 @@ public class ChecklistBulkRepository {
 
     public void bulkInsertProcedureChecklists(List<UserProcedureChecklist> checklists) {
         String sql = """
-                insert into user_procedure_checklists (deceased_profile_id, procedure_id, is_check)
-                values (?, ?, ?)
+                insert into user_procedure_checklists (deceased_profile_id, procedure_id, is_check, due_date)
+                values (?, ?, ?, ?)
                 """;
 
         jdbcTemplate.batchUpdate(sql, checklists, checklists.size(),
@@ -25,10 +25,11 @@ public class ChecklistBulkRepository {
                     ps.setLong(1,checklist.getDeceasedProfile().getDeceasedProfileId());
                     ps.setLong(2, checklist.getProcedure().getProcedureId());
                     ps.setBoolean(3, checklist.isCheck());
+                    ps.setObject(4, checklist.getDueDate());
         });
     }
 
-    public void bulkInsertDocumentCheklists(List<UserDocumentChecklist> checklists) {
+    public void bulkInsertDocumentChecklists(List<UserDocumentChecklist> checklists) {
         String sql = """
                 insert into user_document_checklists (deceased_profile_id, procedure_document_id, is_checked)
                 values (?, ?, ?)
