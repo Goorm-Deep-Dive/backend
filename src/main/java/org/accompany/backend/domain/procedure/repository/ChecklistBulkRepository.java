@@ -25,7 +25,6 @@ public class ChecklistBulkRepository {
                     ps.setLong(1,checklist.getDeceasedProfile().getDeceasedProfileId());
                     ps.setLong(2, checklist.getProcedure().getProcedureId());
                     ps.setBoolean(3, checklist.isChecked());
-                    ps.setBoolean(3, checklist.isChecked());
                     ps.setObject(4, checklist.getDueDate());
         });
     }
