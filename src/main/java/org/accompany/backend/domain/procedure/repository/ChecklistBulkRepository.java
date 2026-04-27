@@ -16,7 +16,7 @@ public class ChecklistBulkRepository {
 
     public void bulkInsertProcedureChecklists(List<UserProcedureChecklist> checklists) {
         String sql = """
-                insert into user_procedure_checklists (deceased_profile_id, procedure_id, is_check, due_date)
+                insert into user_procedure_checklists (deceased_profile_id, procedure_id, is_checked, due_date)
                 values (?, ?, ?, ?)
                 """;
 
@@ -24,7 +24,7 @@ public class ChecklistBulkRepository {
                 (ps, checklist) -> {
                     ps.setLong(1,checklist.getDeceasedProfile().getDeceasedProfileId());
                     ps.setLong(2, checklist.getProcedure().getProcedureId());
-                    ps.setBoolean(3, checklist.isCheck());
+                    ps.setBoolean(3, checklist.isChecked());
                     ps.setObject(4, checklist.getDueDate());
         });
     }

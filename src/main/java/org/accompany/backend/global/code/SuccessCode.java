@@ -15,7 +15,11 @@ public enum SuccessCode {
     // 인증
     LOGIN_SUCCESS(HttpStatus.OK, "AUTH_001", "로그인에 성공했습니다."),
     SIGNUP_SUCCESS(HttpStatus.CREATED, "AUTH_002", "회원가입이 완료되었습니다."),
-    LOGOUT_SUCCESS(HttpStatus.OK, "AUTH_003", "로그아웃되었습니다.")
+    LOGOUT_SUCCESS(HttpStatus.OK, "AUTH_003", "로그아웃되었습니다."),
+
+    //체크리스트
+    USER_PROCEDURE_CHECKLIST_UPDATED(HttpStatus.OK, "CHECKLIST_001", "사용자의 절차 체크리스트 상태가 변경되었습니다."),
+    USER_DOCUMENT_CHECKLIST_UPDATED(HttpStatus.OK, "CHECKLIST_002", "사용자의 문서 체크리스트 상태가 변경되었습니다."),
 
     ;
 

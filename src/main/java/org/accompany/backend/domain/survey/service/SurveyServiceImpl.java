@@ -98,7 +98,7 @@ public class SurveyServiceImpl implements SurveyService {
                         .dueDate(calculateDueDate(procedure, dateOfDeath))
                         .deceasedProfile(deceasedProfile)
                         .procedure(procedure)
-                        .isCheck(false)
+                        .isChecked(false)
                         .build())
                 .toList();
 

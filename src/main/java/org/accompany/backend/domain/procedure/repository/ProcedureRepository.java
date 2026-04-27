@@ -18,7 +18,7 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
         p.procedureId,
         p.procedureName,
         upc.userProcedureChecklistId,
-        coalesce(upc.isCheck, false),
+        coalesce(upc.isChecked, false),
         upc.dueDate,
 
         p.dueDate,

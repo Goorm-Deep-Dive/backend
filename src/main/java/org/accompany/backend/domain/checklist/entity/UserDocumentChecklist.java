@@ -27,7 +27,7 @@ public class UserDocumentChecklist extends BaseEntity {
     @JoinColumn(name = "procedure_document_id", nullable = false)
     private ProcedureDocument procedureDocument;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name="is_checked")
     private boolean isChecked = false;
 
     @Builder

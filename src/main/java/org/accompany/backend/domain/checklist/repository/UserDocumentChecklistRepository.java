@@ -7,6 +7,7 @@ import java.util.Optional;
 
 public interface UserDocumentChecklistRepository extends JpaRepository<UserDocumentChecklist, Long> {
 
-	Optional<UserDocumentChecklist> findByProcedureDocumentProcedureDocumentIdAndDeceasedProfileDeceasedProfileId(Long documentId, Long profileId);
+	Optional<UserDocumentChecklist> findByUserDocumentChecklistId(Long userDocumentChecklistId);
+	Optional<UserDocumentChecklist> findByProcedureDocumentProcedureDocumentIdAndDeceasedProfileDeceasedProfileId(Long procedureDocumentId, Long profileId);
 
 }
