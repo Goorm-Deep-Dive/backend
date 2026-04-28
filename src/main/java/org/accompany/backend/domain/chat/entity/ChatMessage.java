@@ -28,7 +28,6 @@ public class ChatMessage {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String content;
 
