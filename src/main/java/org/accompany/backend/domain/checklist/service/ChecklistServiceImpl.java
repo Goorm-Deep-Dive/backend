@@ -6,6 +6,7 @@ import org.accompany.backend.domain.checklist.dto.ProcedureChecklistQueryDto;
 import org.accompany.backend.domain.checklist.dto.response.*;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.checklist.repository.ChecklistRepository;
 import org.accompany.backend.domain.checklist.repository.UserDocumentChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.procedure.entity.Procedure;
@@ -35,6 +36,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 	private final UserRepository userRepository;
 	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
 	private final UserDocumentChecklistRepository userDocumentChecklistRepository;
+	private final ChecklistRepository checklistRepository;
 
 
 	@Override
@@ -82,7 +84,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 		// 4. 절차 조회
 		List<ProcedureChecklistQueryDto> rows =
-				procedureRepository.findProceduresWithChecklist(categoryId, profileId);
+				checklistRepository.findProceduresWithChecklist(categoryId, profileId);
 
 		// 5. DTO 변환
 		List<ChecklistCategoryProcedureRes.Procedure> procedures =
@@ -110,7 +112,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 				dto.procedureId(),
 				dto.procedureName(),
 				calculateRemainingDays(dueDate),
-				dto.checked()
+				dto.checked(),
+				convertPriority(dto.priority())
 		);
 	}
 
@@ -121,6 +124,18 @@ public class ChecklistServiceImpl implements ChecklistService {
 		LocalDate target = dueDate.toLocalDate();
 
 		return (int) ChronoUnit.DAYS.between(today, target);
+	}
+
+	private String convertPriority(Integer priority) {
+		if (priority == null) {
+			return "선택";
+		}
+
+		return switch (priority) {
+			case 1 -> "필수";
+			case 3 -> "선택";
+			default -> "선택";
+		};
 	}
 
 	@Override
