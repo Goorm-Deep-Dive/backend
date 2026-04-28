@@ -14,5 +14,7 @@ public record ProcedureChecklistQueryDto(
 
 		Integer baseDueDate,
 		DueDateUnit dueDateUnit,
-		DueDateType dueDateType
+		DueDateType dueDateType,
+
+		Integer priority
 ) {}

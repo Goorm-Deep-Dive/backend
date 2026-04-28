@@ -12,6 +12,7 @@ public record ChecklistCategoryProcedureRes(
 				Long procedureId,
 				String procedureName,
 				Integer remainingDays,
-				boolean checked
+				boolean checked,
+				String priority
 		) {}
 	}
