@@ -90,7 +90,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 						.map(this::toProcedureRes)
 						.toList();
 
-		log.info("[Checklist] getCategoryProcedures END - categoryId={}, profileId={}, count={}", categoryId, profileId, procedures.size() );
+		log.info("[Checklist] getCategoryProcedures END - categoryId={}, profileId={}, count={}", categoryId, profileId, procedures.size());
 
 		return new ChecklistCategoryProcedureRes(
 				category.getProcedureCategoryId(),
@@ -110,7 +110,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 				dto.procedureId(),
 				dto.procedureName(),
 				calculateRemainingDays(dueDate),
-				Boolean.TRUE.equals(dto.isChecked())
+				dto.checked()
 		);
 	}
 
@@ -203,6 +203,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 
 							return new ChecklistProcedureDetailRes.Document(
+									d.getProcedureDocumentId(), //260428 수정사항 (추가)
 									udc != null ? udc.getUserDocumentChecklistId() : null,
 									d.getDocumentName(),
 									udc != null && udc.isChecked()
@@ -210,27 +211,34 @@ public class ChecklistServiceImpl implements ChecklistService {
 						})
 						.toList();
 
-		log.info( "[Checklist] getProcedureDetail END - procedureId={}, channels={}, contacts={}, documents={}, checked={}",
-				procedureId, channels.size(), contacts.size(), documents.size(), checklist != null && checklist.isChecked()
+		boolean checked = checklist != null && checklist.isChecked();
+
+		ChecklistProcedureDetailRes response =
+				new ChecklistProcedureDetailRes(
+						checklist != null ? checklist.getUserProcedureChecklistId() : null,
+						procedure.getProcedureId(),
+						procedure.getProcedureCategory().getProcedureCategoryId(),
+
+						procedure.getProcedureName(),
+						procedure.getDescription(),
+
+						procedure.getDueDateDescription(),
+						procedure.getSearchScope(),
+						procedure.getCautionText(),
+
+						channels,
+						contacts,
+						documents,
+
+						checked
+				);
+
+		log.info(
+				"[Checklist] getProcedureDetail END - procedureId={}, channels={}, contacts={}, documents={}, checked={}",
+				procedureId, channels.size(), contacts.size(), documents.size(), checked
 		);
 
-		return new ChecklistProcedureDetailRes(
-				checklist != null ? checklist.getUserProcedureChecklistId() : null,
-				procedure.getProcedureId(),
-				procedure.getProcedureCategory().getProcedureCategoryId(),
-
-				procedure.getProcedureName(),
-
-				procedure.getDueDateDescription(),
-				procedure.getSearchScope(),
-				procedure.getCautionText(),
-
-				channels,
-				contacts,
-				documents,
-
-				checklist != null && checklist.isChecked()
-		);
+		return response;
 
 	}
 
@@ -288,7 +296,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 	@Transactional
 	public void modifyProcedureCheck(Long userProcedureChecklistId, Long userId, boolean isChecked) {
 
-		log.info( "[Checklist] modifyProcedureCheck START - userProcedureChecklistId={}, userId={}, isChecked={}", userProcedureChecklistId, userId, isChecked );
+		log.info("[Checklist] modifyProcedureCheck START - userProcedureChecklistId={}, userId={}, isChecked={}", userProcedureChecklistId, userId, isChecked);
 
 		// 1. user 조회
 		User user = userRepository.findById(userId)
@@ -314,7 +322,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 		// 5. 상태 변경
 		checklist.updateCheck(isChecked);
 
-		log.info( "[Checklist] modifyProcedureCheck END - userProcedureChecklistId={}, changedTo={}", userProcedureChecklistId,   checklist.isChecked() );
+		log.info("[Checklist] modifyProcedureCheck END - userProcedureChecklistId={}, changedTo={}", userProcedureChecklistId, checklist.isChecked());
 
 	}
 
@@ -322,7 +330,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 	@Transactional
 	public void modifyDocumentCheck(Long procedureDocumentId, Long userId, boolean isChecked) {
 
-		log.info( "[Checklist] modifyDocumentCheck START - procedureDocumentId={}, userId={}, isChecked={}", procedureDocumentId, userId, isChecked);
+		log.info("[Checklist] modifyDocumentCheck START - procedureDocumentId={}, userId={}, isChecked={}", procedureDocumentId, userId, isChecked);
 
 		// 1. user 조회
 		User user = userRepository.findById(userId)
@@ -357,7 +365,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 		// 5. 상태 변경
 		checklist.updateChecked(isChecked);
 
-		log.info( "[Checklist] modifyDocumentCheck END - procedureDocumentId={}, changedTo={}", procedureDocumentId, checklist.isChecked() );
+		log.info("[Checklist] modifyDocumentCheck END - procedureDocumentId={}, changedTo={}", procedureDocumentId, checklist.isChecked());
 	}
 
 
