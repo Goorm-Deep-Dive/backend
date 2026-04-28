@@ -39,8 +39,10 @@ public enum ErrorCode {
 	// 설문조사
 	SURVEY_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "SURVEY_001", "이미 완료된 설문조사입니다."),
 
+	// AI 챗봇
+	AI_CHAT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "CHAT_001", "AI 챗봇 서비스와 통신할 수 없습니다."),
 	// 서류
-	DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOCUMENT_001", "해당 서류를 찾을 수 없습니다."),
+	DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOCUMENT_001", "해당 서류를 찾을 수 없습니다.")
 
 
 	;
