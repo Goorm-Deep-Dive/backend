@@ -30,7 +30,7 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
         on upc.procedure = p
         and upc.deceasedProfile.deceasedProfileId = :profileId
     where p.procedureCategory.procedureCategoryId = :categoryId
-    order by p.procedureId asc
+    order by p.priority asc
 """)
 	List<ProcedureChecklistQueryDto> findProceduresWithChecklist(
 			@Param("categoryId") Long categoryId,
