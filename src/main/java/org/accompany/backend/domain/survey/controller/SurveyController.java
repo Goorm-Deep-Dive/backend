@@ -1,9 +1,12 @@
 package org.accompany.backend.domain.survey.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.accompany.backend.domain.survey.dto.request.SurveyTempSaveReq;
 import org.accompany.backend.domain.survey.dto.response.SurveyListRes;
+import org.accompany.backend.domain.survey.dto.response.SurveyTempSaveRes;
 import org.accompany.backend.domain.survey.service.SurveyService;
 import org.accompany.backend.global.code.SuccessCode;
 import org.accompany.backend.global.response.ApiResponse;
@@ -36,5 +39,16 @@ public class SurveyController {
     ){
         surveyService.skipSurvey(principal.getUserId());
         return ApiResponse.success(SuccessCode.OK);
+    }
+
+    @PostMapping("/temp")
+    @Operation(summary = "설문조사 임시저장", description = "설문조사를 임시 저장합니다.")
+    public ResponseEntity<ApiResponse<SurveyTempSaveRes>> saveTempSurvey(
+            @AuthenticationPrincipal
+            CustomUserPrincipal principal,
+            @RequestBody
+            SurveyTempSaveReq request
+    ) {
+        return ApiResponse.success(SuccessCode.OK, surveyService.saveTempSurvey(principal.getUserId(), request));
     }
 }

@@ -10,11 +10,14 @@ import org.accompany.backend.domain.procedure.entity.DueDateUnit;
 import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.repository.ChecklistBulkRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
-import org.accompany.backend.domain.survey.dto.response.SurveyAnswerRes;
-import org.accompany.backend.domain.survey.dto.response.SurveyListRes;
-import org.accompany.backend.domain.survey.dto.response.SurveyQuestionRes;
+import org.accompany.backend.domain.survey.dto.request.SurveyAnswerIdReq;
+import org.accompany.backend.domain.survey.dto.request.SurveyTempSaveReq;
+import org.accompany.backend.domain.survey.dto.response.*;
 import org.accompany.backend.domain.survey.entity.SurveyQuestion;
+import org.accompany.backend.domain.survey.entity.SurveyResponse;
+import org.accompany.backend.domain.survey.repository.SurveyAnswerRepository;
 import org.accompany.backend.domain.survey.repository.SurveyQuestionRepository;
+import org.accompany.backend.domain.survey.repository.SurveyResponseRepository;
 import org.accompany.backend.domain.user.entity.SurveyStatus;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
@@ -37,6 +40,8 @@ public class SurveyServiceImpl implements SurveyService {
     private final ProcedureRepository procedureRepository;
     private final ChecklistBulkRepository checklistBulkRepository;
     private final UserRepository userRepository;
+    private final SurveyAnswerRepository surveyAnswerRepository;
+    private final SurveyResponseRepository surveyResponseRepository;
 
 
     @Override
@@ -142,5 +147,44 @@ public class SurveyServiceImpl implements SurveyService {
             case MONTH -> base.plusMonths(amount);
             case DAY -> base.plusDays(amount);
         };
+    }
+
+    @Override
+    @Transactional
+    public SurveyTempSaveRes saveTempSurvey(Long userId, SurveyTempSaveReq request){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+        if(deceasedProfile == null){
+            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+        }
+
+        if(deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED) {
+            throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
+        }
+
+        deceasedProfile.updateStatus(SurveyStatus.IN_PROGRESS);
+        surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
+
+        List<SurveyResponse> responses = (request.answers() != null ? request.answers() : List.<SurveyAnswerIdReq>of()).stream()
+                .map(answer -> SurveyResponse.builder()
+                        .deceasedProfile(deceasedProfile)
+                        .surveyAnswer(surveyAnswerRepository.getReferenceById(answer.surveyAnswerId()))
+                                .build())
+                        .toList();
+
+        List<SurveyResponse> savedResponses = surveyResponseRepository.saveAll(responses);
+
+        List<SurveyResponseRes> responseResList = savedResponses.stream()
+                .map(response ->new SurveyResponseRes(
+                        response.getSurveyResponseId(),
+                        response.getSurveyAnswer().getSurveyAnswerId()
+                ))
+                .toList();
+
+        return new SurveyTempSaveRes(
+                deceasedProfile.getSurveyStatus().name(),
+                responseResList
+        );
     }
 }
