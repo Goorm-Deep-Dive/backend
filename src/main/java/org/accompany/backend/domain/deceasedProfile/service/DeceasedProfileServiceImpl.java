@@ -2,12 +2,15 @@ package org.accompany.backend.domain.deceasedProfile.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.dto.request.DeceasedProfileCreateReq;
 import org.accompany.backend.domain.deceasedProfile.dto.request.DeceasedProfileUpdateReq;
 import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedProfileListRes;
 import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedProfileRes;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.deceasedProfile.repository.DeceasedProfileRepository;
+import org.accompany.backend.domain.survey.service.SurveyService;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
@@ -15,6 +18,7 @@ import org.accompany.backend.global.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -25,6 +29,8 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
 
     private final DeceasedProfileRepository deceasedProfileRepository;
     private final UserRepository userRepository;
+    private final UserProcedureChecklistRepository userProcedureChecklistRepository;
+    private final SurveyService surveyService;
 
     @Override
     @Transactional
@@ -97,8 +103,19 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
         log.info("[DeceasedProfile] 고인 정보 수정 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
 
         DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
+        LocalDate beforeDateOfDeath = profile.getDateOfDeath();
 
         profile.updateDeceasedProfile(request.name(), request.dateOfDeath());
+
+        if (request.dateOfDeath() != null && !beforeDateOfDeath.equals(request.dateOfDeath())) {
+            log.info("[DeceasedProfile] 영면일 변경 감지 - userId={}, deceasedProfileId={}, before={}, after={}",
+                    userId, deceasedProfileId, beforeDateOfDeath, request.dateOfDeath());
+
+            int updatedCount = updateProcedureChecklistDueDates(profile);
+
+            log.info("[DeceasedProfile] 절차 체크리스트 마감일 재계산 완료 - userId={}, deceasedProfileId={}, updatedCount={}",
+                    userId, deceasedProfileId, updatedCount);
+        }
 
         log.info("[DeceasedProfile] 고인 정보 수정 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
     }
@@ -114,6 +131,25 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
         user.updateActiveDeceasedProfile(profile);
 
         log.info("[DeceasedProfile] 현재 고인 정보 변경 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+    }
+
+    private int updateProcedureChecklistDueDates(DeceasedProfile profile) {
+
+        List<UserProcedureChecklist> checklists =
+                userProcedureChecklistRepository.findAllWithProcedureByDeceasedProfileId(
+                        profile.getDeceasedProfileId()
+                );
+
+        checklists.forEach(checklist ->
+                checklist.updateDueDate(
+                        surveyService.calculateDueDate(
+                                checklist.getProcedure(),
+                                profile.getDateOfDeath()
+                        )
+                )
+        );
+
+        return checklists.size();
     }
 
     private User getUser(Long userId) {
