@@ -9,10 +9,12 @@ public record ProcedureChecklistQueryDto(
 		Long procedureId,
 		String procedureName,
 		Long userProcedureChecklistId,
-		Boolean isChecked,
+		boolean checked,
 		LocalDateTime dueDate,
 
 		Integer baseDueDate,
 		DueDateUnit dueDateUnit,
-		DueDateType dueDateType
+		DueDateType dueDateType,
+
+		Integer priority
 ) {}

@@ -122,7 +122,9 @@ public class SurveyServiceImpl implements SurveyService {
         log.info("[Survey] 설문조사 스킵 완료 - userId={}, deceasedProfilelId={}, 생성된 체크리스트 수 ={}",
                 userId, deceasedProfile.getDeceasedProfileId(), allProcedures.size());
     }
-    private LocalDateTime calculateDueDate(Procedure procedure, LocalDate dateOfDeath) {
+
+    @Override
+    public LocalDateTime calculateDueDate(Procedure procedure, LocalDate dateOfDeath) {
         DueDateType type = procedure.getDueDateType();
         DueDateUnit unit = procedure.getDueDateUnit();
         Integer dueDate = procedure.getDueDate();

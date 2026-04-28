@@ -34,4 +34,13 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
 
 	Optional<UserProcedureChecklist> findByUserProcedureChecklistId(Long userProcedureChecklistId);
 
+	@Query("""
+		select upc
+		from UserProcedureChecklist upc
+		join fetch upc.procedure
+		where upc.deceasedProfile.deceasedProfileId = :deceasedProfileId
+	""")
+	List<UserProcedureChecklist> findAllWithProcedureByDeceasedProfileId(
+			@Param("deceasedProfileId") Long deceasedProfileId
+	);
 }
