@@ -9,8 +9,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public interface SurveyService {
-    SurveyListRes getSurveyList();
+    SurveyListRes getSurveyList(Long userId);
     void skipSurvey(Long userId);
     SurveyTempSaveRes saveTempSurvey(Long userId, SurveyTempSaveReq request);
+
     LocalDateTime calculateDueDate(Procedure procedure, LocalDate dateOfDeath);
 }
