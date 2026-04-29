@@ -383,5 +383,38 @@ public class ChecklistServiceImpl implements ChecklistService {
 		log.info("[Checklist] modifyDocumentCheck END - procedureDocumentId={}, changedTo={}", procedureDocumentId, checklist.isChecked());
 	}
 
+	@Override
+	@Transactional
+	public void deleteProcedureChecklist(Long userProcedureChecklistId, Long userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+
+		UserProcedureChecklist checklist =
+				userProcedureChecklistRepository
+						.findByUserProcedureChecklistId(userProcedureChecklistId)
+						.orElseThrow(() ->
+								new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
+
+		// 내 프로필 소유 검증
+		if (!checklist.getDeceasedProfile().getDeceasedProfileId()
+				.equals(profile.getDeceasedProfileId())) {
+			throw new BusinessException(ErrorCode.PROFILE_ACCESS_DENIED);
+		}
+
+		// priority 조회
+		Integer priority = checklist.getProcedure().getPriority();
+
+		if (priority == null || priority != 3) {
+			throw new BusinessException(ErrorCode.CHECKLIST_DELETE_FORBIDDEN);
+		}
+
+		userProcedureChecklistRepository.delete(checklist);
+	}
 
 }

@@ -13,4 +13,5 @@ public interface ChecklistService {
 	ChecklistOverallProgressRes getOverallProgress(Long userId);
 	void modifyProcedureCheck(Long userProcedureChecklistId, Long userId, boolean isChecked);
 	void modifyDocumentCheck(Long procedureDocumentId, Long userId, boolean isChecked);
+	void deleteProcedureChecklist(Long userProcedureChecklistId, Long userId);
 }
