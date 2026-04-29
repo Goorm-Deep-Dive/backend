@@ -10,9 +10,7 @@ import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistOverallProgressRes;
 import org.accompany.backend.domain.checklist.dto.response.ChecklistProcedureDetailRes;
 import org.accompany.backend.domain.checklist.service.ChecklistService;
-import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.code.SuccessCode;
-import org.accompany.backend.global.exception.BusinessException;
 import org.accompany.backend.global.response.ApiResponse;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +27,7 @@ public class ChecklistController {
 
 	private final ChecklistService checklistService;
 
-//	@SecurityRequirement(name = "BearerAuth")
+
 	@GetMapping("/categories")
 	@Operation(summary = "카테고리 목록 조회", description = "각 절차의 카테고리 목록을 조회합니다.")
 	public ResponseEntity<ApiResponse<ChecklistCategoryRes>> getCategories() {
@@ -85,15 +83,15 @@ public class ChecklistController {
 	}
 
 	@Operation(summary = "과업 체크리스트 is_checked 상태 변경", description = "각 절차의 체크리스트 상태를 변경합니다.")
-	@PatchMapping("/procedures/{checklistId}")
+	@PatchMapping("/procedures/{userProcedureChecklistId}")
 	public ResponseEntity<ApiResponse<Void>> modifyProcedureCheck(
-			@PathVariable Long checklistId, //userProcedureChecklistId
+			@PathVariable Long userProcedureChecklistId,
 			@RequestBody ChecklistCheckReq req,
 			@AuthenticationPrincipal CustomUserPrincipal principal
 	) {
 
 		checklistService.modifyProcedureCheck(
-				checklistId,
+				userProcedureChecklistId,
 				principal.getUserId(),
 				req.isChecked()
 		);
@@ -117,5 +115,21 @@ public class ChecklistController {
 
 		return ApiResponse.success(SuccessCode.USER_DOCUMENT_CHECKLIST_UPDATED);
 	}
+
+
+	//260429
+	@Operation(summary = "선택 체크리스트 항목 제거", description = "사용자가 선택(가변) 체크리스트 항목을 삭제합니다.")
+	@DeleteMapping("/procedures/{userProcedureChecklistId}")
+	public ResponseEntity<ApiResponse<Void>> deleteProcedureChecklist(
+			@PathVariable Long userProcedureChecklistId,
+			@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
+		checklistService.deleteProcedureChecklist(userProcedureChecklistId, principal.getUserId());
+
+		return ApiResponse.success(
+				SuccessCode.USER_PROCEDURE_CHECKLIST_DELETED
+		);
+	}
+
 
 }

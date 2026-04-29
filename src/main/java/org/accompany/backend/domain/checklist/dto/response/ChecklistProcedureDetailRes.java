@@ -9,6 +9,7 @@ public record ChecklistProcedureDetailRes(
 		Long procedureCategoryId,
 
 		String procedureName,
+		String description,//260428 수정사항 (추가)
 
 		String dueDateDescription,
 		String searchScope,
@@ -18,7 +19,7 @@ public record ChecklistProcedureDetailRes(
 		List<Contact> contacts,
 		List<Document> documents,
 
-		Boolean isCheck
+		boolean checked
 ) {
 
 	public record Channel(
@@ -34,8 +35,9 @@ public record ChecklistProcedureDetailRes(
 	) {}
 
 	public record Document(
+			Long procedureDocumentId, //260428 수정사항 (추가)
 			Long userDocumentChecklistId,
 			String documentName,
-			Boolean isChecked
+			boolean checked
 	) {}
 }
