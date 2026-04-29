@@ -45,7 +45,19 @@ public class SurveyServiceImpl implements SurveyService {
 
 
     @Override
-    public SurveyListRes getSurveyList() {
+    public SurveyListRes getSurveyList(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+        if(deceasedProfile == null) {
+            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+        }
+
+        if(deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED){
+            throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
+        }
+
         List<SurveyQuestion> questions = surveyQuestionRepository.findAllByOrderBySurveyQuestionIdAsc();
 
         List<SurveyQuestionRes> surveyQuestionResList = questions.stream()
@@ -66,8 +78,18 @@ public class SurveyServiceImpl implements SurveyService {
                                 .toList()
                 ))
                 .toList();
+        List<Long> selectedAnswerIds = List.of();
+        if(deceasedProfile.getSurveyStatus() == SurveyStatus.IN_PROGRESS){
+            selectedAnswerIds = surveyResponseRepository.findAllByDeceasedProfile(deceasedProfile).stream()
+                    .map(response -> response.getSurveyAnswer().getSurveyAnswerId())
+                    .toList();
+        }
 
-        return new SurveyListRes(surveyQuestionResList);
+        return new SurveyListRes(
+                deceasedProfile.getSurveyStatus().name(),
+                surveyQuestionResList,
+                selectedAnswerIds
+        );
     }
 
     @Override

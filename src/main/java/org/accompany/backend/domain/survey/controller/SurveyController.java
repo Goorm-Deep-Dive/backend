@@ -28,8 +28,10 @@ public class SurveyController {
 
     @GetMapping
     @Operation(summary = "설문조사 목록 조회", description = "전체 설문 질문과 답변 선택지를 조회합니다.")
-    public ResponseEntity<ApiResponse<SurveyListRes>> getSurveyList() {
-        return ApiResponse.success(SuccessCode.OK, surveyService.getSurveyList());
+    public ResponseEntity<ApiResponse<SurveyListRes>> getSurveyList(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ApiResponse.success(SuccessCode.OK, surveyService.getSurveyList(principal.getUserId()));
     }
 
     @PostMapping("/skip")

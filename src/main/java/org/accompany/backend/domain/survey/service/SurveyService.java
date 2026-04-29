@@ -5,7 +5,8 @@ import org.accompany.backend.domain.survey.dto.request.SurveyTempSaveReq;
 import org.accompany.backend.domain.survey.dto.response.SurveyTempSaveRes;
 
 public interface SurveyService {
-    SurveyListRes getSurveyList();
+    SurveyListRes getSurveyList(Long userId);
     void skipSurvey(Long userId);
     SurveyTempSaveRes saveTempSurvey(Long userId, SurveyTempSaveReq request);
+
 }
