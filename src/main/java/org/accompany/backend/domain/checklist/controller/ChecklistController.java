@@ -116,4 +116,20 @@ public class ChecklistController {
 		return ApiResponse.success(SuccessCode.USER_DOCUMENT_CHECKLIST_UPDATED);
 	}
 
+
+	//260429
+	@Operation(summary = "선택 체크리스트 항목 제거", description = "사용자가 선택(가변) 체크리스트 항목을 삭제합니다.")
+	@DeleteMapping("/procedures/{userProcedureChecklistId}")
+	public ResponseEntity<ApiResponse<Void>> deleteProcedureChecklist(
+			@PathVariable Long userProcedureChecklistId,
+			@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
+		checklistService.deleteProcedureChecklist(userProcedureChecklistId, principal.getUserId());
+
+		return ApiResponse.success(
+				SuccessCode.USER_PROCEDURE_CHECKLIST_DELETED
+		);
+	}
+
+
 }

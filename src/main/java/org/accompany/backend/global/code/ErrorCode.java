@@ -28,6 +28,7 @@ public enum ErrorCode {
 	// 체크리스트
 	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CHECKLIST_001", "카테고리를 찾을 수 없습니다."),
 	CHECKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "CHECKLIST_002", "사용자의 체크리스트를 찾을 수 없습니다."),
+	CHECKLIST_DELETE_FORBIDDEN(HttpStatus.BAD_REQUEST,"CHECKLIST_003", "선택 항목만 삭제할 수 있습니다."),
 
 	// 절차
 	PROCEDURE_NOT_FOUND(HttpStatus.NOT_FOUND, "PROCEDURE_001", "절차 정보를 찾을 수 없습니다."),
