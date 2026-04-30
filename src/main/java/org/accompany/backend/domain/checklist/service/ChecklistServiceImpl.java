@@ -9,22 +9,28 @@ import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.checklist.repository.ChecklistRepository;
 import org.accompany.backend.domain.checklist.repository.UserDocumentChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
+import org.accompany.backend.domain.procedure.dto.response.ProcedureDocumentDetailRes;
 import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.entity.ProcedureCategory;
 import org.accompany.backend.domain.procedure.repository.ProcedureCategoryRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
 import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
+import org.accompany.backend.domain.survey.entity.SurveyRequirementType;
+import org.accompany.backend.domain.survey.service.SurveyService;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -37,6 +43,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
 	private final UserDocumentChecklistRepository userDocumentChecklistRepository;
 	private final ChecklistRepository checklistRepository;
+	private final SurveyService surveyService;
 
 
 	@Override
@@ -90,6 +97,10 @@ public class ChecklistServiceImpl implements ChecklistService {
 		List<ChecklistCategoryProcedureRes.Procedure> procedures =
 				rows.stream()
 						.map(this::toProcedureRes)
+						.sorted(Comparator.comparing((ChecklistCategoryProcedureRes.Procedure p) ->
+										SurveyRequirementType.REQUIRED.getLabel().equals(p.priority()) ? 1 : 3
+								)
+								.thenComparing(ChecklistCategoryProcedureRes.Procedure::remainingDays, Comparator.nullsLast(Integer::compareTo)))
 						.toList();
 
 		log.info("[Checklist] getCategoryProcedures END - categoryId={}, profileId={}, count={}", categoryId, profileId, procedures.size());
@@ -127,15 +138,9 @@ public class ChecklistServiceImpl implements ChecklistService {
 	}
 
 	private String convertPriority(Integer priority) {
-		if (priority == null) {
-			return "선택";
-		}
-
-		return switch (priority) {
-			case 1 -> "필수";
-			case 3 -> "선택";
-			default -> "선택";
-		};
+		return Objects.equals(priority, 1) // priority != null && priority == 1
+				? SurveyRequirementType.REQUIRED.getLabel()
+				: SurveyRequirementType.OPTIONAL.getLabel();
 	}
 
 	@Override
@@ -225,7 +230,39 @@ public class ChecklistServiceImpl implements ChecklistService {
 							);
 						})
 						.toList();
+/*
+		//*****서류별 상세 조회 합치는 버전
+		// 7. documents
+		List<ProcedureDocumentDetailRes> documents =
+				procedure.getProcedureDocuments().stream()
+						.map(d -> {
 
+							UserDocumentChecklist udc =
+									userDocumentChecklistRepository
+											.findByProcedureDocumentProcedureDocumentIdAndDeceasedProfileDeceasedProfileId(
+													d.getProcedureDocumentId(),
+													profileId
+											)
+											.orElse(null);
+
+							return new ProcedureDocumentDetailRes(
+									d.getProcedureDocumentId(),
+									udc != null ? udc.getUserDocumentChecklistId() : null,
+
+									d.getDocumentType(),
+									d.getDocumentChannelType(),
+
+									d.getDocumentName(),
+									d.getDocumentLocation(),
+									d.getDocumentLink(),
+
+									d.getDescription(),
+
+									udc != null && udc.isChecked()
+							);
+						})
+						.toList();
+*/
 		boolean checked = checklist != null && checklist.isChecked();
 
 		ChecklistProcedureDetailRes response =
@@ -383,9 +420,119 @@ public class ChecklistServiceImpl implements ChecklistService {
 		log.info("[Checklist] modifyDocumentCheck END - procedureDocumentId={}, changedTo={}", procedureDocumentId, checklist.isChecked());
 	}
 
+	//추가 가능 체크리스트 목록 조회
+	@Override
+	public List<OptionalProcedureRes> getOptionalProcedures(Long userId) {
+
+		log.info("START getOptionalProcedures userId={}", userId);
+
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+
+		Long profileId = profile.getDeceasedProfileId();
+		LocalDate dateOfDeath = profile.getDateOfDeath();
+
+		log.debug("Loaded active profile deceasedProfileId={}, dateOfDeath={}", profileId, dateOfDeath);
+
+		List<OptionalProcedureRes> result = checklistRepository
+				.findAvailableOptionalProcedures(profileId)
+				.stream()
+				.map(procedure -> {
+
+					log.debug("Processing procedureId={}, procedureName={}", procedure.getProcedureId(), procedure.getProcedureName());
+
+					LocalDateTime dueDate = surveyService.calculateDueDate(procedure, dateOfDeath);
+
+					Integer remainingDays = calculateRemainingDays(dueDate);
+
+					return OptionalProcedureRes.from(
+							procedure,
+							remainingDays,
+							convertPriority(procedure.getPriority())
+					);
+				})
+				.toList();
+
+		log.info("END getOptionalProcedures userId={}, resultCount={}", userId, result.size());
+
+		return result;
+	}
+
+	@Override
+	@Transactional
+	public void createOptionalProcedure(Long procedureId, Long userId) {
+
+		log.info("START getOptionalProcedures procedureId={}, userId={}", procedureId, userId);
+
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+
+		Procedure procedure = procedureRepository.findById(procedureId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.PROCEDURE_NOT_FOUND));
+
+		//   if (procedure.getPriority() != 3) {
+		//       throw new BusinessException(ErrorCode.CHECKLIST_CREATE_FORBIDDEN);
+		//   }
+
+		if (!Objects.equals(procedure.getPriority(), 3)) {
+			throw new BusinessException(ErrorCode.CHECKLIST_CREATE_FORBIDDEN);
+
+		}
+
+		if (userProcedureChecklistRepository
+				.existsByProcedureProcedureIdAndDeceasedProfileDeceasedProfileId(
+						procedureId,
+						profile.getDeceasedProfileId()
+				)) {
+			throw new BusinessException(ErrorCode.CHECKLIST_ALREADY_EXISTS);
+		}
+
+		LocalDateTime dueDate =
+				surveyService.calculateDueDate(procedure, profile.getDateOfDeath());
+
+		UserProcedureChecklist checklist =
+				UserProcedureChecklist.builder()
+						.deceasedProfile(profile)
+						.procedure(procedure)
+						.isChecked(false)
+						.dueDate(dueDate)
+						.build();
+
+		try {
+
+			UserProcedureChecklist saved = userProcedureChecklistRepository.save(checklist);
+			log.info("END createOptionalProcedure SUCCESS procedureId={}, userId={}, profileId={}, checklistId={}",
+					procedureId,
+					userId,
+					profile.getDeceasedProfileId(),
+					saved.getUserProcedureChecklistId()
+			);
+
+		} catch (DataIntegrityViolationException e) {
+			throw new BusinessException(ErrorCode.CHECKLIST_ALREADY_EXISTS);
+		}
+
+
+	}
+
 	@Override
 	@Transactional
 	public void deleteProcedureChecklist(Long userProcedureChecklistId, Long userId) {
+
+		log.info("deleteProcedureChecklist START -  userProcedureChecklistId={}", userProcedureChecklistId);
+
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -415,6 +562,9 @@ public class ChecklistServiceImpl implements ChecklistService {
 		}
 
 		userProcedureChecklistRepository.delete(checklist);
+
+		log.info("deleteProcedureChecklist END - deleted userProcedureChecklistId={}", userProcedureChecklistId);
 	}
+
 
 }

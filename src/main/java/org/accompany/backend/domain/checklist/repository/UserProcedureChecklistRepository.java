@@ -43,4 +43,9 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
 	List<UserProcedureChecklist> findAllWithProcedureByDeceasedProfileId(
 			@Param("deceasedProfileId") Long deceasedProfileId
 	);
+
+	boolean existsByProcedureProcedureIdAndDeceasedProfileDeceasedProfileId(
+			Long procedureId,
+			Long profileId
+	);
 }

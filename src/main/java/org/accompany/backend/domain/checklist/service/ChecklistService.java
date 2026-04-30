@@ -1,9 +1,8 @@
 package org.accompany.backend.domain.checklist.service;
 
-import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryProcedureRes;
-import org.accompany.backend.domain.checklist.dto.response.ChecklistCategoryRes;
-import org.accompany.backend.domain.checklist.dto.response.ChecklistOverallProgressRes;
-import org.accompany.backend.domain.checklist.dto.response.ChecklistProcedureDetailRes;
+import org.accompany.backend.domain.checklist.dto.response.*;
+
+import java.util.List;
 
 public interface ChecklistService {
 
@@ -13,5 +12,7 @@ public interface ChecklistService {
 	ChecklistOverallProgressRes getOverallProgress(Long userId);
 	void modifyProcedureCheck(Long userProcedureChecklistId, Long userId, boolean isChecked);
 	void modifyDocumentCheck(Long procedureDocumentId, Long userId, boolean isChecked);
+	List<OptionalProcedureRes> getOptionalProcedures(Long userId);
+	void createOptionalProcedure(Long procedureId, Long userId);
 	void deleteProcedureChecklist(Long userProcedureChecklistId, Long userId);
 }
