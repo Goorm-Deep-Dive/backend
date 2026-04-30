@@ -8,6 +8,7 @@ import org.accompany.backend.domain.deceasedProfile.dto.request.DeceasedProfileC
 import org.accompany.backend.domain.deceasedProfile.dto.request.DeceasedProfileUpdateReq;
 import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedProfileListRes;
 import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedProfileRes;
+import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedSurveyStatusRes;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.deceasedProfile.repository.DeceasedProfileRepository;
 import org.accompany.backend.domain.survey.service.SurveyService;
@@ -131,6 +132,20 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
         user.updateActiveDeceasedProfile(profile);
 
         log.info("[DeceasedProfile] 현재 고인 정보 변경 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+    }
+
+    @Override
+    public DeceasedSurveyStatusRes getDeceasedSurveyStatus(Long userId) {
+        log.info("[DeceasedProfile] 현재 고인 정보 설문조사 상태 조회 - userId={}", userId);
+
+        User user = getUser(userId);
+        DeceasedProfile profile = user.getActiveDeceasedProfile();
+
+        if (profile == null) {
+            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+        }
+
+        return new DeceasedSurveyStatusRes(profile.getSurveyStatus());
     }
 
     private int updateProcedureChecklistDueDates(DeceasedProfile profile) {

@@ -8,6 +8,7 @@ import org.accompany.backend.domain.deceasedProfile.dto.request.DeceasedProfileC
 import org.accompany.backend.domain.deceasedProfile.dto.request.DeceasedProfileUpdateReq;
 import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedProfileListRes;
 import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedProfileRes;
+import org.accompany.backend.domain.deceasedProfile.dto.response.DeceasedSurveyStatusRes;
 import org.accompany.backend.domain.deceasedProfile.service.DeceasedProfileService;
 import org.accompany.backend.global.code.SuccessCode;
 import org.accompany.backend.global.response.ApiResponse;
@@ -89,5 +90,16 @@ public class DeceasedProfileController {
         deceasedProfileService.changeActiveDeceasedProfile(principal.getUserId(), deceasedProfileId);
 
         return ApiResponse.success(SuccessCode.OK);
+    }
+
+    @GetMapping("/surveys/status")
+    @Operation(summary = "현재 고인의 설문조사 상태 확인", description = "로그인한 사용자의 현재 고인 정보에 대해 설문조사 상태값을 조회합니다.")
+    public ResponseEntity<ApiResponse<DeceasedSurveyStatusRes>> getDeceasedSurveyStatus(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ApiResponse.success(
+                SuccessCode.OK,
+                deceasedProfileService.getDeceasedSurveyStatus(principal.getUserId())
+        );
     }
 }
