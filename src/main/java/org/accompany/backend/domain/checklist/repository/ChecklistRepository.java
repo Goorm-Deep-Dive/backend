@@ -36,4 +36,24 @@ public interface ChecklistRepository extends JpaRepository <Procedure, Long> {
 			@Param("categoryId") Long categoryId,
 			@Param("profileId") Long profileId
 	);
+
+	/**
+	 * priority=3 이면서
+	 * 아직 현재 profile checklist 에 없는 항목 조회
+	 */
+	@Query("""
+        select p
+        from Procedure p
+        join fetch p.procedureCategory c
+        where p.priority = 3
+        and not exists (
+            select 1
+            from UserProcedureChecklist u
+            where u.procedure = p
+            and u.deceasedProfile.deceasedProfileId = :profileId
+        )
+        order by c.procedureCategoryId asc, p.procedureId asc
+    """)
+	List<Procedure> findAvailableOptionalProcedures(Long profileId);
+
 }

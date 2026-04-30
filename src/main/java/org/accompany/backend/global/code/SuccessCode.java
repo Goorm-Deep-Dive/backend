@@ -18,9 +18,10 @@ public enum SuccessCode {
     LOGOUT_SUCCESS(HttpStatus.OK, "AUTH_003", "로그아웃되었습니다."),
 
     //체크리스트
-    USER_PROCEDURE_CHECKLIST_UPDATED(HttpStatus.OK, "CHECKLIST_001", "사용자의 절차 체크리스트 상태가 변경되었습니다."),
-    USER_DOCUMENT_CHECKLIST_UPDATED(HttpStatus.OK, "CHECKLIST_002", "사용자의 문서 체크리스트 상태가 변경되었습니다."),
-    USER_PROCEDURE_CHECKLIST_DELETED(HttpStatus.OK, "CHECKLIST_003", "사용자의 가변 체크리스트 항목이 삭제되었습니다."),
+    USER_PROCEDURE_CHECKLIST_UPDATED(HttpStatus.OK, "CHECKLIST_SUCCESS_001", "사용자의 절차 체크리스트 상태가 변경되었습니다."),
+    USER_DOCUMENT_CHECKLIST_UPDATED(HttpStatus.OK, "CHECKLIST_SUCCESS_002", "사용자의 문서 체크리스트 상태가 변경되었습니다."),
+    USER_PROCEDURE_CHECKLIST_DELETED(HttpStatus.OK, "CHECKLIST_SUCCESS_003", "사용자의 가변 체크리스트 항목이 삭제되었습니다."),
+    USER_PROCEDURE_CHECKLIST_CREATED(HttpStatus.CREATED, "CHECKLIST_SUCCESS_004", "사용자의 가변 체크리스트 항목이 추가되었습니다."),
     ;
 
     private final HttpStatus status;

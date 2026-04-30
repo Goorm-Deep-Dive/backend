@@ -17,4 +17,5 @@ public record ProcedureDocumentDetailRes(
 		String description,
 
 		boolean checked
+
 ) {}

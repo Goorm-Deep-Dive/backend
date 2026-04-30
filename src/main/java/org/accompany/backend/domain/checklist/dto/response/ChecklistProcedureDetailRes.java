@@ -1,5 +1,7 @@
 package org.accompany.backend.domain.checklist.dto.response;
 
+import org.accompany.backend.domain.procedure.dto.response.ProcedureDocumentDetailRes;
+
 import java.util.List;
 
 public record ChecklistProcedureDetailRes(
@@ -18,6 +20,8 @@ public record ChecklistProcedureDetailRes(
 		List<Channel> channels,
 		List<Contact> contacts,
 		List<Document> documents,
+
+//		List<ProcedureDocumentDetailRes> documents, //*****서류별 상세 조회 합치는 버전
 
 		boolean checked
 ) {
