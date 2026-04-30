@@ -10,7 +10,6 @@ import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,11 +50,6 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private UserStatus status;
-
     @Column(nullable = false)
     private boolean isNotificationEnabled;
 
@@ -74,8 +68,6 @@ public class User extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String googleRefreshToken;
 
-    private LocalDateTime deletedAt;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "active_deceased_profile_id")
     private DeceasedProfile activeDeceasedProfile;
@@ -93,18 +85,14 @@ public class User extends BaseEntity {
             String name,
             String email,
             Role role,
-            UserStatus status,
-            Boolean isNotificationEnabled,
-            LocalDateTime deletedAt
+            Boolean isNotificationEnabled
     ) {
         this.provider = provider;
         this.providerUserId = providerUserId;
         this.name = name;
         this.email = email;
         this.role = role != null ? role : Role.USER;
-        this.status = status != null ? status : UserStatus.ACTIVE;
         this.isNotificationEnabled = isNotificationEnabled != null ? isNotificationEnabled : true;
-        this.deletedAt = deletedAt;
     }
 
     public void updateProfile(String email, String name) {
@@ -136,19 +124,6 @@ public class User extends BaseEntity {
 
     public void updateActiveDeceasedProfile(DeceasedProfile activeDeceasedProfile) {
         this.activeDeceasedProfile = activeDeceasedProfile;
-    }
-
-    public void withdraw() {
-        this.status = UserStatus.DELETED;
-        this.deletedAt = LocalDateTime.now();
-        this.name = null;
-        this.email = null;
-        this.providerUserId = null;
-        this.providerAccessToken = null;
-        this.providerRefreshToken = null;
-        this.googleProviderUserId = null;
-        this.googleAccessToken = null;
-        this.googleRefreshToken = null;
     }
 
 }

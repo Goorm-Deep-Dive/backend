@@ -15,13 +15,7 @@ import org.accompany.backend.global.response.ApiResponse;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -101,5 +95,22 @@ public class DeceasedProfileController {
                 SuccessCode.OK,
                 deceasedProfileService.getDeceasedSurveyStatus(principal.getUserId())
         );
+    }
+
+    @DeleteMapping("/deceased-profiles/{deceasedProfileId}")
+    @Operation(
+            summary = "고인 정보 삭제",
+            description = "로그인한 사용자의 고인 정보를 삭제합니다. (활성화된 고인 정보 삭제 방지)"
+    )
+    public ResponseEntity<ApiResponse<Void>> deleteDeceasedProfile(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long deceasedProfileId
+    ) {
+        deceasedProfileService.deleteDeceasedProfile(
+                principal.getUserId(),
+                deceasedProfileId
+        );
+
+        return ApiResponse.success(SuccessCode.OK);
     }
 }
