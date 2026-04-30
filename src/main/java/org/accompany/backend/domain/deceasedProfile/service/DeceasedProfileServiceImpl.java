@@ -48,11 +48,9 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
 
         deceasedProfileRepository.save(profile);
 
-        if (user.getActiveDeceasedProfile() == null) {
-            user.updateActiveDeceasedProfile(profile);
-            log.info("[DeceasedProfile] 첫 고인 정보 생성으로 현재 고인 정보 설정 - userId={}, deceasedProfileId={}",
-                    userId, profile.getDeceasedProfileId());
-        }
+        user.updateActiveDeceasedProfile(profile);
+        log.info("[DeceasedProfile] 고인 정보 생성으로 현재 고인 정보 설정 변경 - userId={}, deceasedProfileId={}",
+                userId, profile.getDeceasedProfileId());
 
         log.info("[DeceasedProfile] 고인 정보 생성 완료 - userId={}, deceasedProfileId={}",
                 userId, profile.getDeceasedProfileId());
