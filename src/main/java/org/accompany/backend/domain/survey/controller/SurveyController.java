@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.accompany.backend.domain.survey.dto.request.SurveyTempSaveReq;
 import org.accompany.backend.domain.survey.dto.response.SurveyListRes;
+import org.accompany.backend.domain.survey.dto.response.SurveySubmitRes;
 import org.accompany.backend.domain.survey.dto.response.SurveyTempSaveRes;
 import org.accompany.backend.domain.survey.service.SurveyService;
 import org.accompany.backend.global.code.SuccessCode;
@@ -32,6 +33,15 @@ public class SurveyController {
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         return ApiResponse.success(SuccessCode.OK, surveyService.getSurveyList(principal.getUserId()));
+    }
+
+    @PostMapping("/complete")
+    @Operation(summary = "설문조사 답변 저장", description = "설문조사 답변을 저장하고 체크리스트를 자동 생성합니다.")
+    public ResponseEntity<ApiResponse<SurveySubmitRes>> submitSurvey(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestBody SurveyTempSaveReq request
+    ) {
+        return ApiResponse.success(SuccessCode.OK, surveyService.submitSurvey(principal.getUserId(), request));
     }
 
     @PostMapping("/skip")

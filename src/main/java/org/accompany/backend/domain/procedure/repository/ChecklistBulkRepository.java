@@ -3,6 +3,7 @@ package org.accompany.backend.domain.procedure.repository;
 import lombok.RequiredArgsConstructor;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.survey.entity.SurveyResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -40,6 +41,19 @@ public class ChecklistBulkRepository {
                     ps.setLong(1, checklist.getDeceasedProfile().getDeceasedProfileId());
                     ps.setLong(2, checklist.getProcedureDocument().getProcedureDocumentId());
                     ps.setBoolean(3, checklist.isChecked());
+                });
+    }
+
+    public void bulkInsertSurveyResponses(List<SurveyResponse> responses) {
+        String sql = """
+                insert into survey_responses (deceased_profile_id, survey_answer_id)
+                values (?, ?)
+                """;
+
+        jdbcTemplate.batchUpdate(sql, responses, responses.size(),
+                (ps, response) -> {
+                    ps.setLong(1, response.getDeceasedProfile().getDeceasedProfileId());
+                    ps.setLong(2, response.getSurveyAnswer().getSurveyAnswerId());
                 });
     }
 }
