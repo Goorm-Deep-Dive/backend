@@ -50,11 +50,6 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private UserStatus status;
-
     @Column(nullable = false)
     private boolean isNotificationEnabled;
 
@@ -90,7 +85,6 @@ public class User extends BaseEntity {
             String name,
             String email,
             Role role,
-            UserStatus status,
             Boolean isNotificationEnabled
     ) {
         this.provider = provider;
@@ -98,7 +92,6 @@ public class User extends BaseEntity {
         this.name = name;
         this.email = email;
         this.role = role != null ? role : Role.USER;
-        this.status = status != null ? status : UserStatus.ACTIVE;
         this.isNotificationEnabled = isNotificationEnabled != null ? isNotificationEnabled : true;
     }
 

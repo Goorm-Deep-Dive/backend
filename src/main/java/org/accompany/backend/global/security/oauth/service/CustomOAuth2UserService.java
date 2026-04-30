@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.entity.Provider;
 import org.accompany.backend.domain.user.entity.Role;
 import org.accompany.backend.domain.user.entity.User;
-import org.accompany.backend.domain.user.entity.UserStatus;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.security.oauth.user.CustomOAuth2User;
 import org.accompany.backend.global.security.oauth.userinfo.OAuth2UserInfo;
@@ -79,7 +78,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .email(userInfo.getEmail())
                 .name(userInfo.getName())
                 .role(Role.USER)
-                .status(UserStatus.ACTIVE)
                 .isNotificationEnabled(true)
                 .build();
 
