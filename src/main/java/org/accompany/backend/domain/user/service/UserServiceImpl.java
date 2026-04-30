@@ -80,11 +80,20 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         socialUnlinkService.unlink(user);
+        log.info("[User] 소셜 로그인 연결 해제 완료 - userId={}", userId);
+
         refreshTokenRepository.deleteByUser(user);
-        user.withdraw();
+        log.info("[User] RefreshToken 삭제 완료 - userId={}", userId);
+
+        user.updateActiveDeceasedProfile(null);
+        log.info("[User] activeDeceasedProfile 해제 완료 - userId={}", userId);
+
+        userRepository.delete(user);
+        log.info("[User] User 엔티티 삭제 완료 - userId={}", userId);
 
         jwtCookieProvider.deleteRefreshTokenCookie(response);
+        log.info("[User] RefreshToken 쿠키 삭제 완료 - userId={}", userId);
 
-        log.info("[User] 회원탈퇴 완료: userId={}", userId);
+        log.info("[User] 회원탈퇴 전체 완료 - userId={}", userId);
     }
 }

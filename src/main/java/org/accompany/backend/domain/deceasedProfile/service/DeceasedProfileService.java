@@ -15,4 +15,5 @@ public interface DeceasedProfileService {
     void changeActiveDeceasedProfile(Long userId, Long deceasedProfileId);
     DeceasedProfileRes getActiveDeceasedProfile(Long userId);
     DeceasedSurveyStatusRes getDeceasedSurveyStatus(Long userId);
+    void deleteDeceasedProfile(Long userId, Long deceasedProfileId);
 }

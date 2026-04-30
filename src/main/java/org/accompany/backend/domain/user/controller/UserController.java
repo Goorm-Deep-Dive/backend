@@ -13,12 +13,7 @@ import org.accompany.backend.global.response.ApiResponse;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -70,13 +65,13 @@ public class UserController {
         response.sendRedirect(linkUrl);
     }
 
-//    @DeleteMapping("/me")
-//    @Operation(summary = "소셜로그인 회원 탈퇴", description = "서비스 회원 탈퇴와 소셜로그인 연동을 끊습니다.")
-//    public ResponseEntity<ApiResponse<Void>> withdraw(
-//            @AuthenticationPrincipal CustomUserPrincipal principal,
-//            HttpServletResponse response
-//    ) {
-//        userService.withdraw(principal.getUserId(), response);
-//        return ApiResponse.success(SuccessCode.OK);
-//    }
+    @DeleteMapping("/me")
+    @Operation(summary = "소셜로그인 회원 탈퇴", description = "서비스 회원 탈퇴와 소셜로그인 연동을 끊습니다.")
+    public ResponseEntity<ApiResponse<Void>> withdraw(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            HttpServletResponse response
+    ) {
+        userService.withdraw(principal.getUserId(), response);
+        return ApiResponse.success(SuccessCode.OK);
+    }
 }

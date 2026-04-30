@@ -148,6 +148,28 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
         return new DeceasedSurveyStatusRes(profile.getSurveyStatus());
     }
 
+    @Override
+    @Transactional
+    public void deleteDeceasedProfile(Long userId, Long deceasedProfileId) {
+        log.info("[DeceasedProfile] 삭제 요청 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+
+        User user = getUser(userId);
+        DeceasedProfile activeDeceasedProfile = user.getActiveDeceasedProfile();
+
+        if(activeDeceasedProfile.getDeceasedProfileId().equals(deceasedProfileId)){
+            log.warn("[DeceasedProfile] 활성 고인 정보 삭제 시도 차단 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+            throw new BusinessException(ErrorCode.CANNOT_DELETE_ACTIVE_DECEASED_PROFILE);
+        }
+
+        DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
+
+        log.info("[DeceasedProfile] 삭제 대상 조회 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+
+        deceasedProfileRepository.delete(profile);
+
+        log.info("[DeceasedProfile] 삭제 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+    }
+
     private int updateProcedureChecklistDueDates(DeceasedProfile profile) {
 
         List<UserProcedureChecklist> checklists =
@@ -168,7 +190,7 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
     }
 
     private User getUser(Long userId) {
-        return userRepository.findById(userId)
+        return userRepository.findByIdWithActiveDeceasedProfile(userId)
                 .orElseThrow(() -> {
                     log.error("[DeceasedProfile] 사용자 조회 실패 - userId={}", userId);
                     return new BusinessException(ErrorCode.USER_NOT_FOUND);
