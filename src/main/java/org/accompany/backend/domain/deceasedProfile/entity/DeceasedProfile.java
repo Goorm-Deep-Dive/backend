@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
-import org.accompany.backend.domain.user.entity.SurveyStatus;
 import org.accompany.backend.domain.user.entity.User;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;

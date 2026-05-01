@@ -1,4 +1,4 @@
-package org.accompany.backend.domain.user.entity;
+package org.accompany.backend.domain.deceasedProfile.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
