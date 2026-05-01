@@ -19,6 +19,7 @@ public interface SurveyAnswerRepository extends JpaRepository<SurveyAnswer, Long
 
     @Query("select distinct a from SurveyAnswer a "+
             "left join fetch a.surveyAnswerProcedures " +
-            "where a.surveyQuestion.surveyQuestionId in :questionIds ")
+            "where a.surveyQuestion.surveyQuestionId in :questionIds " +
+            "order by a.surveyQuestion.surveyQuestionId, a.surveyAnswerId")
     List<SurveyAnswer> findAllWithProceduresByQuestionIds(@Param("questionIds")Set<Long> questionIds);
 }
