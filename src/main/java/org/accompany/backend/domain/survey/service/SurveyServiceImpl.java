@@ -250,13 +250,6 @@ public class SurveyServiceImpl implements SurveyService {
         for (SurveyAnswer answer : submittedAnswers) {
             String text = answer.getSurveyAnswerText();
 
-            if (text.contains("해당 없음")) {
-                continue;
-            }
-            if (text.contains("모름")) {
-                unsureQuestionIds.add(answer.getSurveyQuestion().getSurveyQuestionId());
-                continue;
-            }
             for (SurveyAnswerProcedure sap : answer.getSurveyAnswerProcedures()) {
                 procedureIds.add(sap.getProcedure().getProcedureId());
             }
