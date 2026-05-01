@@ -53,9 +53,6 @@ pipeline {
                         --network "$NETWORK_NAME" \
                         --restart unless-stopped \
                         -p 8090:8080 \
-                        -e SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME" \
-                        -e SPRING_DATASOURCE_USERNAME="$DB_USER" \
-                        -e SPRING_DATASOURCE_PASSWORD="$DB_PASSWORD" \
                         "$IMAGE_NAME:latest" \
                         --spring.config.location=file:/app/application.yml
 
