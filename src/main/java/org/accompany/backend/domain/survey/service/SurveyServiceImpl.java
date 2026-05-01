@@ -9,15 +9,16 @@ import org.accompany.backend.domain.procedure.entity.DueDateType;
 import org.accompany.backend.domain.procedure.entity.DueDateUnit;
 import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.entity.SurveyAnswerProcedure;
-import org.accompany.backend.domain.procedure.repository.ChecklistBulkRepository;
+import org.accompany.backend.domain.checklist.repository.ChecklistBulkRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
 import org.accompany.backend.domain.survey.dto.request.SurveyAnswerIdReq;
-import org.accompany.backend.domain.survey.dto.request.SurveyTempSaveReq;
+import org.accompany.backend.domain.survey.dto.request.SurveySaveReq;
 import org.accompany.backend.domain.survey.dto.response.*;
 import org.accompany.backend.domain.survey.entity.SurveyAnswer;
 import org.accompany.backend.domain.survey.entity.SurveyQuestion;
 import org.accompany.backend.domain.survey.entity.SurveyResponse;
 import org.accompany.backend.domain.survey.repository.SurveyAnswerRepository;
+import org.accompany.backend.domain.survey.repository.SurveyBulkRepository;
 import org.accompany.backend.domain.survey.repository.SurveyQuestionRepository;
 import org.accompany.backend.domain.survey.repository.SurveyResponseRepository;
 import org.accompany.backend.domain.user.entity.SurveyStatus;
@@ -43,6 +44,7 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveyQuestionRepository surveyQuestionRepository;
     private final ProcedureRepository procedureRepository;
     private final ChecklistBulkRepository checklistBulkRepository;
+    private final SurveyBulkRepository surveyBulkRepository;
     private final UserRepository userRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final SurveyResponseRepository surveyResponseRepository;
@@ -177,7 +179,7 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public SurveyTempSaveRes saveTempSurvey(Long userId, SurveyTempSaveReq request) {
+    public SurveyTempSaveRes saveTempSurvey(Long userId, SurveySaveReq request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
@@ -199,7 +201,7 @@ public class SurveyServiceImpl implements SurveyService {
                         .build())
                 .toList();
 
-        checklistBulkRepository.bulkInsertSurveyResponses(responses);
+        surveyBulkRepository.bulkInsertSurveyResponses(responses);
 
         List<SurveyResponseRes> responseResList = responses.stream()
                 .map(response -> new SurveyResponseRes(
@@ -215,7 +217,7 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public SurveySubmitRes submitSurvey(Long userId, SurveyTempSaveReq request) {
+    public SurveySubmitRes submitSurvey(Long userId, SurveySaveReq request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -239,7 +241,7 @@ public class SurveyServiceImpl implements SurveyService {
                         .surveyAnswer(surveyAnswerRepository.getReferenceById(answer.surveyAnswerId()))
                         .build())
                 .toList();
-        checklistBulkRepository.bulkInsertSurveyResponses(responses);
+        surveyBulkRepository.bulkInsertSurveyResponses(responses);
 
         List<SurveyAnswer> submittedAnswers =
                 surveyAnswerRepository.findAllWithProceduresAndQuestionByIds(answerIds);
