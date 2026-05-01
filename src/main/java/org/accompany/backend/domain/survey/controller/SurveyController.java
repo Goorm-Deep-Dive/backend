@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.accompany.backend.domain.survey.dto.request.SurveyTempSaveReq;
+import org.accompany.backend.domain.survey.dto.request.SurveySaveReq;
 import org.accompany.backend.domain.survey.dto.response.SurveyListRes;
 import org.accompany.backend.domain.survey.dto.response.SurveySubmitRes;
 import org.accompany.backend.domain.survey.dto.response.SurveyTempSaveRes;
@@ -39,7 +39,7 @@ public class SurveyController {
     @Operation(summary = "설문조사 답변 저장", description = "설문조사 답변을 저장하고 체크리스트를 자동 생성합니다.")
     public ResponseEntity<ApiResponse<SurveySubmitRes>> submitSurvey(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestBody SurveyTempSaveReq request
+            @RequestBody SurveySaveReq request
     ) {
         return ApiResponse.success(SuccessCode.OK, surveyService.submitSurvey(principal.getUserId(), request));
     }
@@ -59,7 +59,7 @@ public class SurveyController {
             @AuthenticationPrincipal
             CustomUserPrincipal principal,
             @RequestBody
-            SurveyTempSaveReq request
+            SurveySaveReq request
     ) {
         return ApiResponse.success(SuccessCode.OK, surveyService.saveTempSurvey(principal.getUserId(), request));
     }
