@@ -15,7 +15,7 @@ public class SurveyBulkRepository {
 
     public void bulkInsertSurveyResponses(List<SurveyResponse> responses) {
         String sql = """
-                insert into survey_responses (deceased_profile_id, survey_answer_id)
+                insert into ending_schema.survey_responses (deceased_profile_id, survey_answer_id)
                 values (?, ?)
                 """;
 

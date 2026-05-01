@@ -16,7 +16,7 @@ public class ChecklistBulkRepository {
 
     public void bulkInsertProcedureChecklists(List<UserProcedureChecklist> checklists) {
         String sql = """
-                insert into user_procedure_checklists (deceased_profile_id, procedure_id, is_checked, due_date)
+                insert into ending_schema.user_procedure_checklists (deceased_profile_id, procedure_id, is_checked, due_date)
                 values (?, ?, ?, ?)
                 """;
 
@@ -31,7 +31,7 @@ public class ChecklistBulkRepository {
 
     public void bulkInsertDocumentChecklists(List<UserDocumentChecklist> checklists) {
         String sql = """
-                insert into user_document_checklists (deceased_profile_id, procedure_document_id, is_checked)
+                insert into ending_schema.user_document_checklists (deceased_profile_id, procedure_document_id, is_checked)
                 values (?, ?, ?)
                 """;
 
