@@ -21,7 +21,7 @@ import org.accompany.backend.domain.survey.repository.SurveyAnswerRepository;
 import org.accompany.backend.domain.survey.repository.SurveyBulkRepository;
 import org.accompany.backend.domain.survey.repository.SurveyQuestionRepository;
 import org.accompany.backend.domain.survey.repository.SurveyResponseRepository;
-import org.accompany.backend.domain.user.entity.SurveyStatus;
+import org.accompany.backend.domain.deceasedProfile.entity.SurveyStatus;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
