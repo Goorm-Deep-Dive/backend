@@ -364,7 +364,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 				.findByUserProcedureChecklistId(userProcedureChecklistId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
 
-		// 4. 권한 체크 (중요)
+		// 4. 권한 체크
 		if (!checklist.getDeceasedProfile().getDeceasedProfileId()
 				.equals(profile.getDeceasedProfileId())) {
 			throw new BusinessException(ErrorCode.PROFILE_ACCESS_DENIED);
@@ -480,10 +480,6 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 		Procedure procedure = procedureRepository.findById(procedureId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.PROCEDURE_NOT_FOUND));
-
-		//   if (procedure.getPriority() != 3) {
-		//       throw new BusinessException(ErrorCode.CHECKLIST_CREATE_FORBIDDEN);
-		//   }
 
 		if (!Objects.equals(procedure.getPriority(), 3)) {
 			throw new BusinessException(ErrorCode.CHECKLIST_CREATE_FORBIDDEN);

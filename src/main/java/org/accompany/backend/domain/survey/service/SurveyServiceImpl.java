@@ -249,6 +249,7 @@ public class SurveyServiceImpl implements SurveyService {
         Set<Long> procedureIds = new HashSet<>();
         Set<Long> unsureQuestionIds = new HashSet<>();
 
+        //survey 잘모름 -> 체크리스트 문항 생성과 동일
         for (SurveyAnswer answer : submittedAnswers) {
             String text = answer.getSurveyAnswerText();
 
