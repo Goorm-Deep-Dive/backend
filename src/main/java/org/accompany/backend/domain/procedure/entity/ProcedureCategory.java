@@ -29,6 +29,12 @@ public class ProcedureCategory extends BaseEntity {
     @OneToMany(mappedBy = "procedureCategory")
     private List<Procedure> procedures = new ArrayList<>();
 
+    @Column
+    private String color;
+
+    @Column
+    private String icon;
+
     @Builder
     private ProcedureCategory(String categoryName, String description) {
         this.categoryName = categoryName;
