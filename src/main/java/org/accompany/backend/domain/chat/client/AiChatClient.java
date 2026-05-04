@@ -4,12 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.chat.dto.external.AiChatReq;
 import org.accompany.backend.domain.chat.dto.external.AiChatRes;
-import org.accompany.backend.global.code.ErrorCode;
-import org.accompany.backend.global.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
 @Slf4j
 @Component
@@ -17,6 +18,7 @@ import org.springframework.web.client.RestClientException;
 public class AiChatClient {
 
     private final RestClient restClient;
+    private final WebClient webClient;
 
     @Value("${chatbot.base-url}")
     private String aiChatBaseUrl;
@@ -24,25 +26,23 @@ public class AiChatClient {
     @Value("${chatbot.internal-api-key}")
     private String aiChatApiKey;
 
+    private static final String FALLBACK_MESSAGE =
+            "현재 AI 서비스를 일시적으로 이용할 수 없습니다. 잠시 후 다시 시도해주세요.";
+
     public AiChatRes sendMessage(AiChatReq request) {
 
         log.info("[AI Chat] AI 서버 요청 시작 - userId={}", request.userId());
 
         try {
             AiChatRes response = restClient.post()
-                    .uri(aiChatBaseUrl + "/api/v1/chat/messages")
+                    .uri(aiChatBaseUrl + "/api/v1/chats/messages")
                     .header("X-Internal-API-Key", aiChatApiKey)
                     .body(request)
                     .retrieve()
                     .body(AiChatRes.class);
 
             if (response == null || response.message() == null || response.message().isBlank()) {
-
-                log.warn("[AI Chat] AI 응답 비어 있음 - userId={}",
-                        request.userId()
-                );
-
-                throw new BusinessException(ErrorCode.AI_CHAT_SERVICE_UNAVAILABLE);
+                return new AiChatRes(FALLBACK_MESSAGE);
             }
 
             log.debug("[AI Chat] AI 응답 수신 완료 - userId={}, responseLength={}",
@@ -60,7 +60,18 @@ public class AiChatClient {
                     e
             );
 
-            throw new BusinessException(ErrorCode.AI_CHAT_SERVICE_UNAVAILABLE);
+            return new AiChatRes(FALLBACK_MESSAGE);
         }
+    }
+
+    public Flux<String> streamMessage(AiChatReq request) {
+        return webClient.post()
+                .uri(aiChatBaseUrl + "/api/v1/chats/messages/stream")
+                .header("X-Internal-API-Key", aiChatApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToFlux(String.class);
     }
 }
