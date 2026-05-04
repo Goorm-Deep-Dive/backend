@@ -8,13 +8,12 @@ import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.checklist.repository.ChecklistRepository;
 import org.accompany.backend.domain.checklist.repository.UserDocumentChecklistRepository;
+import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
-import org.accompany.backend.domain.procedure.dto.response.ProcedureDocumentDetailRes;
 import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.entity.ProcedureCategory;
 import org.accompany.backend.domain.procedure.repository.ProcedureCategoryRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
-import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.survey.entity.SurveyRequirementType;
 import org.accompany.backend.domain.survey.service.SurveyService;
 import org.accompany.backend.domain.user.entity.User;
@@ -312,7 +311,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 		Long deceasedProfileId = profile.getDeceasedProfileId();
 
 		List<ChecklistCategoryProgressRes> checklistCategoryProgressResList
-				= userProcedureChecklistRepository.findCategoryProgresses(deceasedProfileId);
+				= procedureRepository.findCategoryProgresses(deceasedProfileId);
 
 		int totalCount = checklistCategoryProgressResList.stream()
 				.mapToInt(ChecklistCategoryProgressRes::totalCount)
