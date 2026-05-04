@@ -26,10 +26,10 @@ public interface ChecklistRepository extends JpaRepository <Procedure, Long> {
         p.priority
     )
     from Procedure p
-    left join UserProcedureChecklist upc
+    join UserProcedureChecklist upc
         on upc.procedure = p
-        and upc.deceasedProfile.deceasedProfileId = :profileId
     where p.procedureCategory.procedureCategoryId = :categoryId
+        and upc.deceasedProfile.deceasedProfileId = :profileId
     order by p.priority asc
 """)
 	List<ProcedureChecklistQueryDto> findProceduresWithChecklist(
