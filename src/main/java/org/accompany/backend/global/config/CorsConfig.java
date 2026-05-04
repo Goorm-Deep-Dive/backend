@@ -16,7 +16,9 @@ public class CorsConfig {
         CorsConfiguration apiConfig = new CorsConfiguration();
         apiConfig.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "https://main.d1zx97dx1930ew.amplifyapp.com"
+                "https://main.dhxsvp6qmp12g.amplifyapp.com",
+                "https://www.donghaeng.dev",
+                "https://donghaeng.dev"
         ));
         apiConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         apiConfig.setAllowedHeaders(List.of("*"));
