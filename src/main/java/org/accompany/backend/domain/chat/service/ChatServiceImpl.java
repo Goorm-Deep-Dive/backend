@@ -6,6 +6,7 @@ import org.accompany.backend.domain.chat.client.AiChatClient;
 import org.accompany.backend.domain.chat.dto.external.AiChatReq;
 import org.accompany.backend.domain.chat.dto.external.AiChatRes;
 import org.accompany.backend.domain.chat.dto.request.ChatReq;
+import org.accompany.backend.domain.chat.dto.response.ChatMessageRes;
 import org.accompany.backend.domain.chat.dto.response.ChatRes;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
@@ -13,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -101,4 +105,14 @@ public class ChatServiceImpl implements ChatService {
 
         return emitter;
     }
+
+    @Override
+    public List<ChatMessageRes> getMessages(Long userId, LocalDate date) {
+        log.info("[Chat] 메시지 히스토리 조회 시작 - userId={}, date={}", userId, date);
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+
+        return chatPersistenceService.getMessagesByDate(userId, start, end);
+    }
+
 }

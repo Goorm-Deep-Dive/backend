@@ -6,6 +6,7 @@ import org.accompany.backend.domain.chat.dto.external.AiChatContext;
 import org.accompany.backend.domain.chat.dto.external.AiChatMessage;
 import org.accompany.backend.domain.chat.dto.external.AiChatReq;
 import org.accompany.backend.domain.chat.dto.external.AiChecklistSummary;
+import org.accompany.backend.domain.chat.dto.response.ChatMessageRes;
 import org.accompany.backend.domain.chat.entity.ChatMessage;
 import org.accompany.backend.domain.chat.entity.ChatRole;
 import org.accompany.backend.domain.chat.repository.ChatMessageRepository;
@@ -32,6 +33,15 @@ public class ChatPersistenceService {
     private final UserRepository userRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserProcedureChecklistRepository userProcedureChecklistRepository;
+
+    public List<ChatMessageRes> getMessagesByDate(Long userId, LocalDateTime start, LocalDateTime end) {
+        return chatMessageRepository
+                .findByUser_UserIdAndCreatedAtBetweenOrderByCreatedAtAsc(userId, start, end)
+                .stream()
+                .map(chatMessage ->
+                        new ChatMessageRes(chatMessage.getRole(), chatMessage.getContent(), chatMessage.getCreatedAt()))
+                .toList();
+    }
 
     public AiChatReq createAiRequest(Long userId, String message) {
 
