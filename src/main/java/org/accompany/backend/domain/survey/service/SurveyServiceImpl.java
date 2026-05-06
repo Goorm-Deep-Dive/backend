@@ -4,12 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.checklist.repository.ChecklistBulkRepository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
+import org.accompany.backend.domain.deceasedProfile.entity.SurveyStatus;
 import org.accompany.backend.domain.procedure.entity.DueDateType;
 import org.accompany.backend.domain.procedure.entity.DueDateUnit;
 import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.entity.SurveyAnswerProcedure;
-import org.accompany.backend.domain.checklist.repository.ChecklistBulkRepository;
 import org.accompany.backend.domain.procedure.repository.ProcedureRepository;
 import org.accompany.backend.domain.survey.dto.request.SurveyAnswerIdReq;
 import org.accompany.backend.domain.survey.dto.request.SurveySaveReq;
@@ -21,7 +22,6 @@ import org.accompany.backend.domain.survey.repository.SurveyAnswerRepository;
 import org.accompany.backend.domain.survey.repository.SurveyBulkRepository;
 import org.accompany.backend.domain.survey.repository.SurveyQuestionRepository;
 import org.accompany.backend.domain.survey.repository.SurveyResponseRepository;
-import org.accompany.backend.domain.deceasedProfile.entity.SurveyStatus;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -74,6 +75,10 @@ public class SurveyServiceImpl implements SurveyService {
                         question.getRequirementType().name(),
                         question.getDescription(),
                         question.getSurveyAnswers().stream()
+                                .sorted(Comparator
+                                        .comparingInt((SurveyAnswer answer) -> answer.getAnswerType().getOrder())
+                                        .thenComparing(SurveyAnswer::getSurveyAnswerId)
+                                )
                                 .map(answer -> new SurveyAnswerRes(
                                         answer.getSurveyAnswerId(),
                                         answer.getSurveyAnswerText(),
@@ -84,6 +89,7 @@ public class SurveyServiceImpl implements SurveyService {
                                 .toList()
                 ))
                 .toList();
+
         List<Long> selectedAnswerIds = List.of();
         if(deceasedProfile.getSurveyStatus() == SurveyStatus.IN_PROGRESS){
             selectedAnswerIds = surveyResponseRepository.findAllByDeceasedProfile(deceasedProfile).stream()
