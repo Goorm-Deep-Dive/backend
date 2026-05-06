@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -275,9 +276,24 @@ public class SurveyServiceImpl implements SurveyService {
             }
         }
 
-        List<Procedure> procedures = procedureIds.isEmpty()
+        List<Procedure> answerProcedures = procedureIds.isEmpty()
                 ? List.of()
                 : procedureRepository.findAllWithDocumentsByIds(procedureIds);
+
+        List<Procedure> requiredProcedures = procedureRepository.findAllRequiredWithDocuments();
+
+        Set<Long> seenProcedureIds = new HashSet<>();
+        List<Procedure> procedures = new ArrayList<>();
+        for (Procedure p : answerProcedures) {
+            if (seenProcedureIds.add(p.getProcedureId())) {
+                procedures.add(p);
+            }
+        }
+        for (Procedure p : requiredProcedures) {
+            if (seenProcedureIds.add(p.getProcedureId())) {
+                procedures.add(p);
+            }
+        }
 
         LocalDate dateOfDeath = deceasedProfile.getDateOfDeath();
 

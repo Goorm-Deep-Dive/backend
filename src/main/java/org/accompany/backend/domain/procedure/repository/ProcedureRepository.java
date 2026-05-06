@@ -21,6 +21,9 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
 	@Query("SELECT DISTINCT p FROM Procedure p LEFT JOIN FETCH p.procedureDocuments WHERE p.procedureId IN :ids")
 	List<Procedure> findAllWithDocumentsByIds(@Param("ids") Set<Long> ids);
 
+	@Query("SELECT DISTINCT p FROM Procedure p LEFT JOIN FETCH p.procedureDocuments WHERE p.priority = 1")
+	List<Procedure> findAllRequiredWithDocuments();
+
 	@EntityGraph(attributePaths = {
 			"procedureChannels"
 	})
