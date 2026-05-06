@@ -1,5 +1,6 @@
 package org.accompany.backend.domain.chat.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.chat.dto.external.AiChatReq;
@@ -19,6 +20,7 @@ public class AiChatClient {
 
     private final RestClient restClient;
     private final WebClient webClient;
+    private final ObjectMapper objectMapper;
 
     @Value("${chatbot.base-url}")
     private String aiChatBaseUrl;
@@ -72,6 +74,10 @@ public class AiChatClient {
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .bodyValue(request)
                 .retrieve()
-                .bodyToFlux(String.class);
+                .bodyToFlux(String.class)
+                .map(json -> {
+                    try { return objectMapper.readValue(json, String.class); }
+                    catch (Exception e) { return json; }
+                });
     }
 }

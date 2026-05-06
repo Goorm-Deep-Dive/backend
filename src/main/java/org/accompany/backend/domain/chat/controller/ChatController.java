@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.accompany.backend.domain.chat.dto.request.ChatReq;
+import org.accompany.backend.domain.chat.dto.response.ChatMessageRes;
 import org.accompany.backend.domain.chat.dto.response.ChatRes;
 import org.accompany.backend.domain.chat.service.ChatService;
 import org.accompany.backend.global.code.SuccessCode;
@@ -13,11 +14,11 @@ import org.accompany.backend.global.security.principal.CustomUserPrincipal;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Tag(name = "Chat API", description = "AI 챗봇 API")
 @RestController
@@ -46,5 +47,17 @@ public class ChatController {
             @Valid @RequestBody ChatReq request
     ) {
         return chatService.streamMessage(principal.getUserId(), request);
+    }
+
+    @GetMapping("/messages")
+    @Operation(summary = "날짜별 채팅 히스토리 조회")
+    public ResponseEntity<ApiResponse<List<ChatMessageRes>>> getMessages(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @RequestParam LocalDate date
+    ) {
+        return ApiResponse.success(
+                SuccessCode.OK,
+                chatService.getMessages(principal.getUserId(), date)
+        );
     }
 }
