@@ -84,7 +84,8 @@ public class SurveyServiceImpl implements SurveyService {
                                         answer.getSurveyAnswerText(),
                                         answer.getNextQuestion() != null
                                                 ? answer.getNextQuestion().getSurveyQuestionId()
-                                                : null
+                                                : null,
+                                        answer.getAnswerType()
                                 ))
                                 .toList()
                 ))
