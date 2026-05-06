@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
 import org.accompany.backend.domain.procedure.entity.SurveyAnswerProcedure;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,11 @@ public class SurveyAnswer extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "next_question_id")
     private SurveyQuestion nextQuestion;
+
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private SurveyAnswerType answerType;
 
     @Column(nullable = false, length = 200)
     private String surveyAnswerText;
