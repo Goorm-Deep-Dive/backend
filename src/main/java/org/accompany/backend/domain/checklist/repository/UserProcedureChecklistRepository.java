@@ -1,7 +1,9 @@
 package org.accompany.backend.domain.checklist.repository;
 
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -30,4 +32,8 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
 			Long procedureId,
 			Long profileId
 	);
+
+	@Modifying
+	@Query("delete from UserProcedureChecklist upc where upc.deceasedProfile = :deceasedProfile")
+	void deleteAllByDeceasedProfile(@Param("deceasedProfile") DeceasedProfile deceasedProfile);
 }

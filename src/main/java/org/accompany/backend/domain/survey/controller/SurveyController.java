@@ -63,4 +63,13 @@ public class SurveyController {
     ) {
         return ApiResponse.success(SuccessCode.OK, surveyService.saveTempSurvey(principal.getUserId(), request));
     }
+
+    @PostMapping("/reset")
+    @Operation(summary = "설문조사 다시 하기", description = "체크리스트와 응답을 모두 삭제하고 설문 상태를 IN_PROGRESS로 되돌립니다.")
+    public ResponseEntity<ApiResponse<Void>> resetSurvey(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        surveyService.resetSurvey(principal.getUserId());
+        return ApiResponse.success(SuccessCode.OK);
+    }
 }

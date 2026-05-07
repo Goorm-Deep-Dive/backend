@@ -14,6 +14,7 @@ public interface SurveyService {
     void skipSurvey(Long userId);
     SurveyTempSaveRes saveTempSurvey(Long userId, SurveySaveReq request);
     SurveySubmitRes submitSurvey(Long userId, SurveySaveReq request);
+    void resetSurvey(Long userId);
 
     LocalDateTime calculateDueDate(Procedure procedure, LocalDate dateOfDeath);
 }
