@@ -1,7 +1,9 @@
 package org.accompany.backend.domain.chat.dto.external;
 
+import java.time.LocalDate;
+
 public record AiChatContext(
-        String userName,
+        LocalDate dateOfDeath,
         AiChecklistSummary checklistSummary
 ) {
 }
