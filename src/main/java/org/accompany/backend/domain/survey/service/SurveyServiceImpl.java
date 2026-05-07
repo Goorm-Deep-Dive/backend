@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.checklist.repository.ChecklistBulkRepository;
+import org.accompany.backend.domain.checklist.repository.UserDocumentChecklistRepository;
+import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.deceasedProfile.entity.SurveyStatus;
 import org.accompany.backend.domain.procedure.entity.DueDateType;
@@ -50,6 +52,8 @@ public class SurveyServiceImpl implements SurveyService {
     private final UserRepository userRepository;
     private final SurveyAnswerRepository surveyAnswerRepository;
     private final SurveyResponseRepository surveyResponseRepository;
+    private final UserProcedureChecklistRepository userProcedureChecklistRepository;
+    private final UserDocumentChecklistRepository userDocumentChecklistRepository;
 
 
     @Override
@@ -325,6 +329,33 @@ public class SurveyServiceImpl implements SurveyService {
                 procedureChecklists.size(),
                 documentChecklists.size()
         );
+    }
+
+    @Override
+    @Transactional
+    public void resetSurvey(Long userId) {
+        log.info("[Survey] 설문조사 다시 하기 시작 - userId={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("[Survey] 사용자 조회 실패 - userId={}", userId);
+                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
+                });
+
+        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+        if (deceasedProfile == null) {
+            log.error("[Survey] 활성 고인 프로필 없음 - userId={}", userId);
+            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+        }
+
+        userProcedureChecklistRepository.deleteAllByDeceasedProfile(deceasedProfile);
+        userDocumentChecklistRepository.deleteAllByDeceasedProfile(deceasedProfile);
+        surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
+
+        deceasedProfile.updateStatus(SurveyStatus.IN_PROGRESS);
+
+        log.info("[Survey] 설문조사 다시 하기 완료 - userId={}, deceasedProfileId={}",
+                userId, deceasedProfile.getDeceasedProfileId());
     }
 
 }
