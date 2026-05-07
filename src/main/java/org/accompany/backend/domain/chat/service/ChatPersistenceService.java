@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -92,7 +94,7 @@ public class ChatPersistenceService {
         DeceasedProfile profile = user.getActiveDeceasedProfile();
 
         if (profile == null) {
-            return new AiChatContext(user.getName(), null);
+            return new AiChatContext(null, null);
         }
 
         List<UserProcedureChecklist> checklists =
@@ -104,7 +106,7 @@ public class ChatPersistenceService {
         log.info("[Chat] 체크리스트 요약 생성 완료 - deceasedProfileId={}",
                 profile.getDeceasedProfileId());
 
-        return new AiChatContext(user.getName(), summary);
+        return new AiChatContext(profile.getDateOfDeath(), summary);
     }
 
     private List<AiChatMessage> getRecentHistory(Long userId) {
@@ -123,25 +125,38 @@ public class ChatPersistenceService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime urgentLimit = now.plusDays(7);
 
-        List<String> notCompleted = checklists.stream()
-                .filter(c -> !c.isChecked())
-                .sorted(Comparator
-                        .comparing((UserProcedureChecklist c) -> c.getProcedure().getPriority()).reversed()
-                        .thenComparing(c -> c.getDueDate() == null ? LocalDateTime.MAX : c.getDueDate()))
-                .limit(3)
-                .map(c -> c.getProcedure().getProcedureName())
-                .toList();
-
-        List<String> urgent = checklists.stream()
+        List<UserProcedureChecklist> urgentChecklists = checklists.stream()
                 .filter(c -> !c.isChecked())
                 .filter(c -> c.getDueDate() != null)
                 .filter(c -> !c.getDueDate().isBefore(now))
                 .filter(c -> !c.getDueDate().isAfter(urgentLimit))
                 .sorted(Comparator.comparing(UserProcedureChecklist::getDueDate))
                 .limit(3)
+                .toList();
+
+        Set<Long> urgentProcedureIds = urgentChecklists.stream()
+                .map(c -> c.getProcedure().getProcedureId())
+                .collect(Collectors.toSet());
+
+        List<String> urgent = urgentChecklists.stream()
                 .map(c -> c.getProcedure().getProcedureName()
                         + "(" + c.getDueDate().toLocalDate() + ")")
                 .toList();
+
+        List<UserProcedureChecklist> notCompletedChecklists = checklists.stream()
+                .filter(c -> !c.isChecked())
+                .filter(c -> !urgentProcedureIds.contains(c.getProcedure().getProcedureId()))
+                .sorted(Comparator
+                        .comparing((UserProcedureChecklist c) -> c.getProcedure().getPriority())
+                        .thenComparing(c -> c.getDueDate() == null ? LocalDateTime.MAX : c.getDueDate()))
+                .toList();
+
+        List<String> notCompleted = notCompletedChecklists.stream()
+                .limit(5)
+                .map(c -> c.getProcedure().getProcedureName())
+                .toList();
+
+        int notCompletedTotalCount = notCompletedChecklists.size();
 
         List<String> completed = checklists.stream()
                 .filter(UserProcedureChecklist::isChecked)
@@ -150,6 +165,6 @@ public class ChatPersistenceService {
                 .map(c -> c.getProcedure().getProcedureName())
                 .toList();
 
-        return new AiChecklistSummary(notCompleted, urgent, completed);
+        return new AiChecklistSummary(notCompleted, urgent, completed, notCompletedTotalCount);
     }
 }
