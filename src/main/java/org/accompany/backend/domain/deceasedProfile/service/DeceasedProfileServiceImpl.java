@@ -39,6 +39,7 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
         log.info("[DeceasedProfile] 고인 정보 생성 시작 - userId={}", userId);
 
         User user = getUser(userId);
+        validateDateOfDeath(request.dateOfDeath());
 
         DeceasedProfile profile = DeceasedProfile.builder()
                 .user(user)
@@ -102,6 +103,8 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
         log.info("[DeceasedProfile] 고인 정보 수정 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
 
         DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
+
+        validateDateOfDeath(request.dateOfDeath());
         LocalDate beforeDateOfDeath = profile.getDateOfDeath();
 
         profile.updateDeceasedProfile(request.name(), request.dateOfDeath());
@@ -201,6 +204,12 @@ public class DeceasedProfileServiceImpl implements DeceasedProfileService {
                     log.error("[DeceasedProfile] 사용자 소유 고인 정보 조회 실패 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
                     return new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
                 });
+    }
+
+    private void validateDateOfDeath(LocalDate dateOfDeath) {
+        if (dateOfDeath != null && dateOfDeath.isAfter(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.INVALID_DATE_OF_DEATH);
+        }
     }
 
 }
