@@ -39,6 +39,8 @@ public enum ErrorCode {
 	DECEASED_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND,"DECEASED_PROFILE_001","고인 정보를 찾을 수 없습니다."),
 	PROFILE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "DECEASED_PROFILE_002", "해당 프로필에 접근할 수 없습니다."),
 	CANNOT_DELETE_ACTIVE_DECEASED_PROFILE(HttpStatus.BAD_REQUEST, "DECEASED_PROFILE_003", "현재 진행 중인 고인 정보는 삭제할 수 없습니다."),
+	INVALID_DATE_OF_DEATH(HttpStatus.BAD_REQUEST, "DECEASED_PROFILE_004","영면일은 오늘 이후 날짜로 선택할 수 없습니다."),
+
 	// 설문조사
 	SURVEY_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "SURVEY_001", "이미 완료된 설문조사입니다."),
 
