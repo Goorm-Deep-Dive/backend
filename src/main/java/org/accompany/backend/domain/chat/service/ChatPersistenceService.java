@@ -47,7 +47,7 @@ public class ChatPersistenceService {
 
     public AiChatReq createAiRequest(Long userId, String message) {
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithActiveDeceasedProfile(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         List<AiChatMessage> history = getRecentHistory(user.getUserId());
