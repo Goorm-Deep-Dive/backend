@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -31,7 +32,7 @@ public class AesEncryptor {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(TAG_LENGTH_BIT, iv));
 
-            byte[] encrypted = cipher.doFinal(plaintext.getBytes());
+            byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
             byte[] combined = new byte[IV_LENGTH + encrypted.length];
             System.arraycopy(iv, 0, combined, 0, IV_LENGTH);
             System.arraycopy(encrypted, 0, combined, IV_LENGTH, encrypted.length);
@@ -53,7 +54,7 @@ public class AesEncryptor {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(TAG_LENGTH_BIT, iv));
 
-            return new String(cipher.doFinal(encrypted));
+            return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new IllegalStateException("토큰 복호화 실패", e);
         }
