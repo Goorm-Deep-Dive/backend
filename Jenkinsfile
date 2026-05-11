@@ -86,24 +86,6 @@ pipeline {
                     }
 
                     if(!success) {
-
-
-
-
-                        /*         def errorStatus = sh(
-                                                script: "curl -s -o /dev/null -w '%{http_code}' http://3.37.170.214:8090/actuator/health || true",
-                                                returnStdout: true
-                                            ).trim()
-
-                                            def errorLog = sh(
-                                                script: "docker logs --tail 80 ${CONTAINER_NAME} 2>&1 || echo 로그 없음",
-                                                returnStdout: true
-                                            ).trim()
-
-                                            env.ERROR_STATUS = errorStatus
-                                            env.ERROR_LOG    = errorLog */
-
-
                         error("Health Check 실패")
                     }
 

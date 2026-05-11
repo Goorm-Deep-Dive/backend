@@ -36,9 +36,15 @@ public class ProcedureCategory extends BaseEntity {
     private String icon;
 
     @Builder
-    private ProcedureCategory(String categoryName, String description) {
+    private ProcedureCategory(
+            String categoryName,
+            String description,
+            String color,
+            String icon
+    ) {
         this.categoryName = categoryName;
         this.description = description;
+        this.color = color;
+        this.icon = icon;
     }
-
 }

@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
 @Tag(name = "Checklist API", description = "체크리스트 API")
 @Slf4j
 @RestController
@@ -25,7 +24,6 @@ import java.util.List;
 public class ChecklistController {
 
 	private final ChecklistService checklistService;
-
 
 	@GetMapping("/categories")
 	@Operation(summary = "카테고리 목록 조회", description = "각 절차의 카테고리 목록을 조회합니다.")
