@@ -16,7 +16,14 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    exclusiveContent {
+        forRepository {
+            maven { url 'https://jitpack.io' }
+        }
+        filter {
+            includeGroup("com.github.napstr")
+        }
+    }
 }
 
 dependencies {

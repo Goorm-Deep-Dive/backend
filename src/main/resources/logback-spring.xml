@@ -66,13 +66,17 @@
     <!-- ==================== Discord Appender ==================== -->
 
     <appender name="DISCORD" class="com.github.napstr.logback.DiscordAppender">
+
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>ERROR</level>
         </filter>
+
         <webhookUri>${DISCORD_WEBHOOK_ERROR}</webhookUri>
+
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern> %-5level %d{yyyy-MM-dd HH:mm:ss} `%logger{20}`%n%msg%n%ex{5}</pattern>
+            <pattern>[%level] %d{yyyy-MM-dd HH:mm:ss} `%logger{20}`%n%msg%n%ex{5}</pattern>
         </layout>
+
         <username>Accompany 에러 알림</username>
         <tts>false</tts>
     </appender>
@@ -81,9 +85,11 @@
         <queueSize>128</queueSize>
         <discardingThreshold>0</discardingThreshold>
         <neverBlock>true</neverBlock>
+
         <appender-ref ref="DISCORD"/>
     </appender>
 
+    <logger name="com.github.napstr.logback" level="OFF"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
