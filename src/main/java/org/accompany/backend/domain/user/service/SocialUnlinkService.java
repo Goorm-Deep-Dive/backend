@@ -3,15 +3,10 @@ package org.accompany.backend.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.entity.User;
-import org.accompany.backend.global.code.ErrorCode;
-import org.accompany.backend.global.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Service
@@ -65,8 +60,7 @@ public class SocialUnlinkService {
 
             log.info("[SocialUnlink] Google unlink 성공: userId={}", user.getUserId());
         } catch (Exception e) {
-            log.error("[SocialUnlink] Google unlink 실패: userId={}", user.getUserId(), e);
-            throw new BusinessException(ErrorCode.SOCIAL_UNLINK_FAILED);
+            log.warn("[SocialUnlink] Google unlink 실패 - 탈퇴는 계속 진행: userId={}", user.getUserId(), e);
         }
     }
 
@@ -89,8 +83,7 @@ public class SocialUnlinkService {
 
             log.info("[SocialUnlink] Kakao unlink 성공: userId={}", user.getUserId());
         } catch (Exception e) {
-            log.error("[SocialUnlink] Kakao unlink 실패: userId={}", user.getUserId(), e);
-            throw new BusinessException(ErrorCode.SOCIAL_UNLINK_FAILED);
+            log.warn("[SocialUnlink] Kakao unlink 실패 - 탈퇴는 계속 진행: userId={}", user.getUserId(), e);
         }
     }
 
@@ -105,11 +98,6 @@ public class SocialUnlinkService {
                 return;
             }
 
-            String encodedToken = URLEncoder.encode(
-                    user.getProviderAccessToken(),
-                    StandardCharsets.UTF_8
-            );
-
             restClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .scheme("https")
@@ -118,7 +106,7 @@ public class SocialUnlinkService {
                             .queryParam("grant_type", "delete")
                             .queryParam("client_id", naverClientId)
                             .queryParam("client_secret", naverClientSecret)
-                            .queryParam("access_token", encodedToken)
+                            .queryParam("access_token", user.getProviderAccessToken())
                             .queryParam("service_provider", "NAVER")
                             .build())
                     .retrieve()
@@ -126,8 +114,7 @@ public class SocialUnlinkService {
 
             log.info("[SocialUnlink] Naver unlink 성공: userId={}", user.getUserId());
         } catch (Exception e) {
-            log.error("[SocialUnlink] Naver unlink 실패: userId={}", user.getUserId(), e);
-            throw new BusinessException(ErrorCode.SOCIAL_UNLINK_FAILED);
+            log.warn("[SocialUnlink] Naver unlink 실패 - 탈퇴는 계속 진행: userId={}", user.getUserId(), e);
         }
     }
 

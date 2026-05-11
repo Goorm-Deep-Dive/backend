@@ -17,6 +17,7 @@ import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ChatPersistenceService {
+
+    private static final int HISTORY_LIMIT = 6;
 
     private final UserRepository userRepository;
     private final ChatMessageRepository chatMessageRepository;
@@ -111,7 +114,7 @@ public class ChatPersistenceService {
 
     private List<AiChatMessage> getRecentHistory(Long userId) {
         return chatMessageRepository
-                .findTop6ByUser_UserIdOrderByCreatedAtDesc(userId)
+                .findTopNByUser_UserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, HISTORY_LIMIT))
                 .stream()
                 .sorted(Comparator.comparing(ChatMessage::getCreatedAt))
                 .map(message -> new AiChatMessage(
