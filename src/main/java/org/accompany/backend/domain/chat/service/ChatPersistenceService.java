@@ -129,7 +129,6 @@ public class ChatPersistenceService {
                 .filter(c -> !c.isChecked())
                 .filter(c -> !c.getProcedure().getDueDateType().equals(DueDateType.NONE) && !c.getProcedure().getDueDateType().equals(DueDateType.IMMEDIATE))
                 .sorted(Comparator.comparing(UserProcedureChecklist::getDueDate))
-                .limit(5)
                 .map(c -> new AiChecklistSummary.DueItem(
                         c.getProcedure().getProcedureName(),
                         c.getDueDate().toLocalDate()
@@ -140,15 +139,15 @@ public class ChatPersistenceService {
                 .filter(c -> !c.isChecked())
                 .filter(c -> c.getProcedure().getDueDateType().equals(DueDateType.IMMEDIATE))
                 .sorted(Comparator.comparing(c -> c.getProcedure().getPriority()))
-                .limit(5)
                 .map(c -> c.getProcedure().getProcedureName())
                 .toList();
 
-
-        int notCompletedTotalCount = (int) checklists.stream()
+        List<String> notCompletedNoDueDate = checklists.stream()
                 .filter(c -> !c.isChecked())
-                .count();
-
+                .filter(c -> c.getProcedure().getDueDateType().equals(DueDateType.NONE))
+                .sorted(Comparator.comparing(c -> c.getProcedure().getPriority()))
+                .map(c -> c.getProcedure().getProcedureName())
+                .toList();
 
         List<String> completed = checklists.stream()
                 .filter(UserProcedureChecklist::isChecked)
@@ -157,6 +156,6 @@ public class ChatPersistenceService {
                 .map(c -> c.getProcedure().getProcedureName())
                 .toList();
 
-        return new AiChecklistSummary(notCompletedWithDeadline, notCompletedUrgent, completed, notCompletedTotalCount);
+        return new AiChecklistSummary(notCompletedWithDeadline, notCompletedUrgent, notCompletedNoDueDate,completed);
     }
 }

@@ -6,8 +6,8 @@ import java.util.List;
 public record AiChecklistSummary(
         List<DueItem> notCompletedWithDeadline,
         List<String> notCompletedUrgent,
-        List<String> completed,
-        int notCompletedTotalCount
+        List<String> notCompletedNoDueDate,
+        List<String> completed
 ) {
     public record DueItem(String name, LocalDate dueDate) {}
 }
