@@ -5,9 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.entity.Provider;
 import org.accompany.backend.domain.user.entity.Role;
 import org.accompany.backend.domain.user.entity.User;
+import org.accompany.backend.domain.user.event.UserEvent;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.security.oauth.user.CustomOAuth2User;
 import org.accompany.backend.global.security.oauth.userinfo.OAuth2UserInfo;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -23,6 +25,7 @@ import java.util.Optional;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -40,6 +43,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         if (!isNewUser) {
             updateExistingUser(user, userInfo);
+        } else {
+            applicationEventPublisher.publishEvent(UserEvent.signUp(user.getUserId(), provider));
         }
 
         log.info("[OAuth2] 로그인 처리 완료 - userId: {}, newUser: {}", user.getUserId(), isNewUser);

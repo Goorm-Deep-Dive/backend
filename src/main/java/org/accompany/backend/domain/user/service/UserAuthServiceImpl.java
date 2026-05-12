@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.entity.RefreshToken;
 import org.accompany.backend.domain.user.entity.Role;
 import org.accompany.backend.domain.user.entity.User;
+import org.accompany.backend.domain.user.event.UserEvent;
 import org.accompany.backend.domain.user.repository.RefreshTokenRepository;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
@@ -14,6 +15,7 @@ import org.accompany.backend.global.exception.BusinessException;
 import org.accompany.backend.global.security.dto.TokenRes;
 import org.accompany.backend.global.security.jwt.JwtCookieProvider;
 import org.accompany.backend.global.security.jwt.JwtTokenProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final JwtCookieProvider jwtCookieProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * RefreshToken 검증 후 AccessToken 재발급
@@ -121,7 +124,16 @@ public class UserAuthServiceImpl implements UserAuthService {
         String refreshToken = jwtCookieProvider.resolveRefreshToken(request);
 
         if(refreshToken != null && !refreshToken.isBlank()) {
-            refreshTokenRepository.deleteByRefreshToken(refreshToken);
+            refreshTokenRepository.findByRefreshToken(refreshToken)
+                    .ifPresent(token -> {
+                        Long userId = token.getUser().getUserId();
+
+                        applicationEventPublisher.publishEvent(
+                                UserEvent.logout(userId)
+                        );
+
+                        refreshTokenRepository.delete(token);
+                    });
         }
 
         jwtCookieProvider.deleteRefreshTokenCookie(response);

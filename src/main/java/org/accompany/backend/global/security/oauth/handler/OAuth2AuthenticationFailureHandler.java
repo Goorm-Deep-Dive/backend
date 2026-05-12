@@ -4,7 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.user.entity.Provider;
+import org.accompany.backend.domain.user.event.UserEvent;
 import org.accompany.backend.global.config.OAuth2Properties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -22,6 +25,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     private final OAuth2Properties oauth2Properties;
     private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request,
@@ -42,6 +46,13 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
                 .queryParam("error", "oauth2_login_failed")
                 .build()
                 .toUriString();
+
+        String deviceId = authorizationRequest != null
+                ? (String) authorizationRequest.getAttributes().get("deviceId") : null;
+
+        String registrationId = request.getRequestURI().substring(request.getRequestURI().lastIndexOf('/') + 1);
+        Provider provider = Provider.fromRegistrationId(registrationId);
+        applicationEventPublisher.publishEvent(UserEvent.failure(deviceId, provider, exception.getMessage()));
 
         log.error("[OAuth2] 로그인 실패 - message: {}", exception.getMessage(), exception);
 

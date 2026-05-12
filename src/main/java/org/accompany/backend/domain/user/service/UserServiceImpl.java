@@ -5,11 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.user.dto.response.UserProfileRes;
 import org.accompany.backend.domain.user.entity.User;
+import org.accompany.backend.domain.user.event.UserEvent;
 import org.accompany.backend.domain.user.repository.RefreshTokenRepository;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
 import org.accompany.backend.global.security.jwt.JwtCookieProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class UserServiceImpl implements UserService {
     private final SocialUnlinkService socialUnlinkService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtCookieProvider jwtCookieProvider;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public UserProfileRes getMyProfile(Long userId) {
@@ -94,6 +97,7 @@ public class UserServiceImpl implements UserService {
         jwtCookieProvider.deleteRefreshTokenCookie(response);
         log.info("[User] RefreshToken 쿠키 삭제 완료 - userId={}", userId);
 
+        applicationEventPublisher.publishEvent(UserEvent.withdrawal(user.getProvider()));
         log.info("[User] 회원탈퇴 전체 완료 - userId={}", userId);
     }
 }
