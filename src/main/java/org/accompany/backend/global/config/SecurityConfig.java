@@ -138,14 +138,20 @@ public class SecurityConfig {
                     attributes.put("link_google", true);
                 }
 
-                if (deviceId != null && !deviceId.isBlank()) {
-                    String registrationId = request.getRequestURI()
-                            .substring(request.getRequestURI().lastIndexOf('/') + 1);
-                    Provider provider = Provider.fromRegistrationId(registrationId);
+                String registrationId = request.getRequestURI()
+                        .substring(request.getRequestURI().lastIndexOf('/') + 1);
+                Provider provider = Provider.fromRegistrationId(registrationId);
 
+                String normalizedDeviceId =
+                        (deviceId == null || deviceId.isBlank()) ? null : deviceId;
+
+                applicationEventPublisher.publishEvent(UserEvent.attempt(normalizedDeviceId, provider));
+
+                if (normalizedDeviceId != null) {
                     attributes.put("deviceId", deviceId);
-                    applicationEventPublisher.publishEvent(UserEvent.attempt(deviceId, provider));
                 }
+
+
 
                 return OAuth2AuthorizationRequest.from(authorizationRequest)
                         .additionalParameters(additionalParameters)

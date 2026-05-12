@@ -97,7 +97,7 @@ public class UserServiceImpl implements UserService {
         jwtCookieProvider.deleteRefreshTokenCookie(response);
         log.info("[User] RefreshToken 쿠키 삭제 완료 - userId={}", userId);
 
-        applicationEventPublisher.publishEvent(UserEvent.withdrawal(user.getProvider()));
+        applicationEventPublisher.publishEvent(UserEvent.withdrawal(user.getUserId(), user.getProvider()));
         log.info("[User] 회원탈퇴 전체 완료 - userId={}", userId);
     }
 }

@@ -30,7 +30,7 @@ public record UserEvent(
         return new UserEvent(UserEventType.SIGN_UP, null, provider, userId, null);
     }
 
-    public static UserEvent withdrawal(Provider provider) {
-        return new UserEvent(UserEventType.WITHDRAWAL, null, provider, null, null);
+    public static UserEvent withdrawal(Long userId, Provider provider) {
+        return new UserEvent(UserEventType.WITHDRAWAL, null, provider, userId, null);
     }
 }
