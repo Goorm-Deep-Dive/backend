@@ -2,9 +2,10 @@ package org.accompany.backend.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.accompany.backend.domain.user.event.UserEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @RequiredArgsConstructor
@@ -12,8 +13,8 @@ public class UserEventLogListener {
 
     private final UserEventLogService userEventLogService;
 
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     @Async("eventLogExecutor")
-    @EventListener
     public void onLoginEvent(UserEvent event) {
         switch (event.eventType()) {
             case LOGIN_ATTEMPT -> userEventLogService.recordLoginAttempt(event.deviceId(), event.provider());
