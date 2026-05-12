@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.user.entity.Provider;
+import org.accompany.backend.domain.user.event.UserEvent;
 import org.accompany.backend.domain.user.service.UserAuthService;
 import org.accompany.backend.domain.user.service.UserService;
 import org.accompany.backend.global.code.ErrorCode;
@@ -12,6 +14,7 @@ import org.accompany.backend.global.exception.BusinessException;
 import org.accompany.backend.global.security.jwt.JwtCookieProvider;
 import org.accompany.backend.global.security.jwt.JwtTokenProvider;
 import org.accompany.backend.global.security.oauth.user.CustomOAuth2User;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -42,6 +45,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtCookieProvider jwtCookieProvider;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -99,6 +103,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     providerRefreshToken,
                     response
             );
+
+            String deviceId = authorizationRequest != null
+                    ? (String) authorizationRequest.getAttributes().get("deviceId") : null;
+
+            Provider provider = Provider.fromRegistrationId(oauthToken.getAuthorizedClientRegistrationId());
+            applicationEventPublisher.publishEvent(UserEvent.success(deviceId, user.getUserId(), provider));
 
             log.info("[OAuth2] 로그인 성공 처리 완료 - userId: {}, redirectUri: {}",
                     user.getUserId(), redirectUri);

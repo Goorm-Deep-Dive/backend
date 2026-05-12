@@ -3,12 +3,15 @@ package org.accompany.backend.global.config;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.accompany.backend.domain.user.entity.Provider;
+import org.accompany.backend.domain.user.event.UserEvent;
 import org.accompany.backend.global.security.handler.JwtAccessDeniedHandler;
 import org.accompany.backend.global.security.jwt.JwtAuthenticationEntryPoint;
 import org.accompany.backend.global.security.jwt.JwtAuthenticationFilter;
 import org.accompany.backend.global.security.oauth.handler.OAuth2AuthenticationFailureHandler;
 import org.accompany.backend.global.security.oauth.handler.OAuth2AuthenticationSuccessHandler;
 import org.accompany.backend.global.security.oauth.service.CustomOAuth2UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -44,6 +47,7 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -113,6 +117,7 @@ public class SecurityConfig {
 
                 String redirectUri = request.getParameter("redirect_uri");
                 String linkGoogle = request.getParameter("link_google");
+                String deviceId = request.getParameter("deviceId");
 
                 Map<String, Object> additionalParameters =
                         new HashMap<>(authorizationRequest.getAdditionalParameters());
@@ -131,6 +136,15 @@ public class SecurityConfig {
                     additionalParameters.put("access_type", "offline");
                     additionalParameters.put("prompt", "consent");
                     attributes.put("link_google", true);
+                }
+
+                if (deviceId != null && !deviceId.isBlank()) {
+                    String registrationId = request.getRequestURI()
+                            .substring(request.getRequestURI().lastIndexOf('/') + 1);
+                    Provider provider = Provider.fromRegistrationId(registrationId);
+
+                    attributes.put("deviceId", deviceId);
+                    applicationEventPublisher.publishEvent(UserEvent.attempt(deviceId, provider));
                 }
 
                 return OAuth2AuthorizationRequest.from(authorizationRequest)
