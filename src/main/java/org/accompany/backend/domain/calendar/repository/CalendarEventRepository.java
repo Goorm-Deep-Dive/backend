@@ -20,13 +20,42 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
 	@Query("""
 			    SELECT ce
 			    FROM CalendarEvent ce
-			    WHERE ce.deceasedProfile.deceasedProfileId = :deceasedProfileId
+			
+			    LEFT JOIN FETCH ce.deceasedProfile dp
+			    LEFT JOIN FETCH ce.userProcedureChecklist upc
+			    LEFT JOIN FETCH upc.procedure p
+			    LEFT JOIN FETCH p.procedureCategory pc
+			
+			    WHERE dp.deceasedProfileId = :deceasedProfileId
 			      AND ce.startAt <= :endDate
 			      AND (ce.endAt IS NULL OR ce.endAt >= :startDate)
+			
 			    ORDER BY ce.startAt ASC
 			""")
 	List<CalendarEvent> findByDeceasedProfileIdAndDateRange(
 			@Param("deceasedProfileId") Long deceasedProfileId,
+			@Param("startDate") LocalDateTime startDate,
+			@Param("endDate") LocalDateTime endDate
+	);
+
+
+	@Query("""
+			    SELECT ce
+			    FROM CalendarEvent ce
+			
+			    LEFT JOIN FETCH ce.deceasedProfile dp
+			    LEFT JOIN FETCH ce.userProcedureChecklist upc
+			    LEFT JOIN FETCH upc.procedure p
+			    LEFT JOIN FETCH p.procedureCategory pc
+			
+			    WHERE ce.user.userId = :userId
+			      AND ce.startAt <= :endDate
+			      AND (ce.endAt IS NULL OR ce.endAt >= :startDate)
+			
+			    ORDER BY ce.startAt ASC
+			""")
+	List<CalendarEvent> findByUserIdAndDateRange(
+			@Param("userId") Long userId,
 			@Param("startDate") LocalDateTime startDate,
 			@Param("endDate") LocalDateTime endDate
 	);
@@ -40,6 +69,7 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
 	Set<Long> findChecklistIdsByDeceasedProfileId(
 			@Param("deceasedProfileId") Long deceasedProfileId
 	);
+
 
 	/**
 	 * Google Event ID 조회
