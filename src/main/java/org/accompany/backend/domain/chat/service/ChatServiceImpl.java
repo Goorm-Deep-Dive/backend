@@ -9,6 +9,7 @@ import org.accompany.backend.domain.chat.dto.request.ChatReq;
 import org.accompany.backend.domain.chat.dto.response.ChatMessageRes;
 import org.accompany.backend.domain.chat.dto.response.ChatRes;
 import org.accompany.backend.global.exception.BusinessException;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -64,9 +66,12 @@ public class ChatServiceImpl implements ChatService {
         String requestId = UUID.randomUUID().toString().substring(0, 8);
 
         log.info("[Chat:SSE] 시작 - requestId={}, userId={}", requestId, userId);
+        Map<String, String> mdcContext = MDC.getCopyOfContextMap();
 
         Thread.ofVirtual().start(() -> {
             try {
+                if (mdcContext != null) MDC.setContextMap(mdcContext);
+
                 for (String token : aiChatClient.streamMessage(aiRequest).toIterable()) {
                     fullResponse.append(token);
                     emitter.send(SseEmitter.event().name("message").data(token));
@@ -104,14 +109,16 @@ public class ChatServiceImpl implements ChatService {
                 }
 
             } catch (IOException e) {
-                log.warn("[Chat:SSE] 클라이언트 연결 종료 - userId={}, length={}",
-                        userId, fullResponse.length());
+                log.warn("[Chat:SSE] 클라이언트 연결 종료 - requestId={}, userId={}, length={}",
+                        requestId, userId, fullResponse.length());
                 emitter.complete();
 
             } catch (Exception e) {
-                log.error("[Chat:SSE] 실패 - userId={}, length={}",
-                        userId, fullResponse.length(), e);
+                log.error("[Chat:SSE] 실패 - requestId={}, userId={}, length={}",
+                        requestId, userId, fullResponse.length(), e);
                 emitter.completeWithError(e);
+            } finally {
+                MDC.clear();
             }
         });
 

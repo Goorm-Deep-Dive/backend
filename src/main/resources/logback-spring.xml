@@ -74,7 +74,7 @@
         <webhookUri>${DISCORD_WEBHOOK_ERROR}</webhookUri>
 
         <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>[%level] %d{yyyy-MM-dd HH:mm:ss} `%logger{20}`%n%msg%n%ex{5}</pattern>
+            <pattern>[%level] %d{yyyy-MM-dd HH:mm:ss} [%X{traceId:-no-trace}] `%logger{20}`%n%msg%n%ex{5}</pattern>
         </layout>
 
         <username>Accompany 에러 알림</username>
