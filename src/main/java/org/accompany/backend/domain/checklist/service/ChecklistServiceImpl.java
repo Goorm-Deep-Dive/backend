@@ -505,6 +505,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 						.dueDate(dueDate)
 						.build();
 
+		//TODO: ChecklistCreatedEvent 추가
+
 		try {
 
 			UserProcedureChecklist saved = userProcedureChecklistRepository.save(checklist);

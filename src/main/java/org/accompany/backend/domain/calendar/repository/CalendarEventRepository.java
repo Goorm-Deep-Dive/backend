@@ -9,31 +9,57 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Long> {
 
 	/**
-	 * 사용자의 특정 기간 캘린더 이벤트 조회
+	 * 특정 고인 프로필의 기간별 캘린더 이벤트 조회
 	 * 기간이 겹치는 모든 이벤트 조회
 	 */
 	@Query("""
-        SELECT ce
-        FROM CalendarEvent ce
-        WHERE ce.user.userId = :userId
-          AND ce.startAt <= :endDate
-          AND (ce.endAt IS NULL OR ce.endAt >= :startDate)
-        ORDER BY ce.startAt ASC
-    """)
-	List<CalendarEvent> findByUserIdAndDateRange(
-			@Param("userId") Long userId,
+			    SELECT ce
+			    FROM CalendarEvent ce
+			    WHERE ce.deceasedProfile.deceasedProfileId = :deceasedProfileId
+			      AND ce.startAt <= :endDate
+			      AND (ce.endAt IS NULL OR ce.endAt >= :startDate)
+			    ORDER BY ce.startAt ASC
+			""")
+	List<CalendarEvent> findByDeceasedProfileIdAndDateRange(
+			@Param("deceasedProfileId") Long deceasedProfileId,
 			@Param("startDate") LocalDateTime startDate,
 			@Param("endDate") LocalDateTime endDate
 	);
 
+	@Query("""
+			    select ce.userProcedureChecklist.userProcedureChecklistId
+			    from CalendarEvent ce
+			    where ce.deceasedProfile.deceasedProfileId = :deceasedProfileId
+			      and ce.userProcedureChecklist is not null
+			""")
+	Set<Long> findChecklistIdsByDeceasedProfileId(
+			@Param("deceasedProfileId") Long deceasedProfileId
+	);
+
 	/**
-	 * Google Event ID 로 조회
+	 * Google Event ID 조회
 	 */
 	Optional<CalendarEvent> findByGoogleEventId(String googleEventId);
+
+	/**
+	 * 체크리스트 일정 존재 여부
+	 */
+	boolean existsByUserProcedureChecklist_UserProcedureChecklistId(
+			Long userProcedureChecklistId
+	);
+
+	/**
+	 * 특정 고인 프로필 + 이벤트 타입 존재 여부
+	 */
+	boolean existsByDeceasedProfile_DeceasedProfileIdAndEventType(
+			Long deceasedProfileId,
+			EventType eventType
+	);
 
 	/**
 	 * 체크리스트 기반 일정 조회
@@ -43,18 +69,18 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
 	);
 
 	/**
-	 * 사용자 + 이벤트 타입 조회
+	 * 특정 고인 프로필 + 이벤트 타입 조회
 	 */
-	List<CalendarEvent> findByUserUserIdAndEventType(
-			Long userId,
+	List<CalendarEvent> findByDeceasedProfileDeceasedProfileIdAndEventType(
+			Long deceasedProfileId,
 			EventType eventType
 	);
 
 	/**
-	 * 사용자 구글 일정 전체 삭제
+	 * 특정 고인 프로필의 특정 타입 일정 전체 삭제
 	 */
-	void deleteByUserUserIdAndEventType(
-			Long userId,
+	void deleteByDeceasedProfileDeceasedProfileIdAndEventType(
+			Long deceasedProfileId,
 			EventType eventType
 	);
 

@@ -21,7 +21,11 @@ public enum EventType {
 	/**
 	 * 사용자가 직접 생성한 일정
 	 */
-	USER_CUSTOM("사용자 일정");
+	USER_CUSTOM("사용자 일정"),
+
+	MEMORIAL_DAY("영면일");
 
 	private final String label;
+
+
 }
