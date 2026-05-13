@@ -1,5 +1,6 @@
 package org.accompany.backend.global.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.global.code.ErrorCode;
@@ -23,11 +24,16 @@ public class GlobalExceptionHandler {
 	 * - ErrorCode에 정의된 상태값과 메시지를 기반으로 응답 생성
 	 */
 	@ExceptionHandler(BusinessException.class)
-	public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+	public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e, HttpServletRequest request) {
 		ErrorCode errorCode = e.getErrorCode();
 
-		log.warn("BusinessException 발생: code={}, message={}", errorCode.getCode(), errorCode.getMessage(), e);
-
+		log.warn("[BusinessException] uri={}, method={}, userId={}, code={}, message={}",
+				request.getRequestURI(),
+				request.getMethod(),
+				request.getAttribute("userId"),
+				errorCode.getCode(),
+				errorCode.getMessage(),
+				e);
 		return ResponseEntity
 				.status(errorCode.getStatus())
 				.body(ErrorResponse.of(errorCode));
@@ -64,8 +70,13 @@ public class GlobalExceptionHandler {
 	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-		log.warn("IllegalArgumentException 발생: {}", e.getMessage(), e);
+	public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e, HttpServletRequest request) {
+		log.warn("[IllegalArgumentException] uri={}, method={}, userId={}, error={}",
+				request.getRequestURI(),
+				request.getMethod(),
+				request.getAttribute("userId"),
+				e.getMessage(),
+				e);
 
 		return ResponseEntity
 				.badRequest()
@@ -78,9 +89,14 @@ public class GlobalExceptionHandler {
 	 * - 내부 구현 정보는 노출하지 않음 (보안)
 	 */
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleException(Exception e) {
+	public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request) {
 
-		log.error(e.getMessage(), e);
+		log.error("[GlobalException] uri={}, method={}, userId={}, error={}",
+				request.getRequestURI(),
+				request.getMethod(),
+				request.getAttribute("userId"),  // LoggingInterceptor에서 저장한 값 재사용
+				e.getMessage(),
+				e);
 
 		return ResponseEntity
 				.status(ErrorCode.INTERNAL_ERROR.getStatus())
