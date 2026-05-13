@@ -36,4 +36,9 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
 	@Modifying
 	@Query("delete from UserProcedureChecklist upc where upc.deceasedProfile = :deceasedProfile")
 	void deleteAllByDeceasedProfile(@Param("deceasedProfile") DeceasedProfile deceasedProfile);
+
+	List<UserProcedureChecklist>
+	findByDeceasedProfile_DeceasedProfileId(
+			Long deceasedProfileId
+	);
 }

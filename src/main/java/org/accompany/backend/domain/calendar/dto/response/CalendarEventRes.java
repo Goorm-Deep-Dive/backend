@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 
 public record CalendarEventRes(
 		Long eventId,        // calendar_event_id
+		Long deceasedProfileId,
+		String deceasedName,
 		Long userProcedureChecklistId,
 		String title,
 		String description,

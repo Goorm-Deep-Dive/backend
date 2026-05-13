@@ -18,20 +18,25 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = true) // 읽기 외에 추가시 readOnly 제거
 @Slf4j
 public class CalendarServiceImpl implements CalendarService {
 
 	private final CalendarEventRepository calendarEventRepository;
 
-
-
 	@Override
 	public List<CalendarEventRes> getMonthlyEvents(
-			Long userId,
+			Long deceasedProfileId,
 			int year,
 			int month
 	) {
+
+		log.info(
+				"=== getMonthlyEvents 시작 === deceasedProfileId: {}, year: {}, month: {}",
+				deceasedProfileId,
+				year,
+				month
+		);
 
 		YearMonth yearMonth = YearMonth.of(year, month);
 
@@ -41,14 +46,29 @@ public class CalendarServiceImpl implements CalendarService {
 		LocalDateTime endOfMonth =
 				yearMonth.atEndOfMonth().atTime(23, 59, 59);
 
-		return getEvents(userId, startOfMonth, endOfMonth);
+		List<CalendarEventRes> result =
+				getEvents(deceasedProfileId, startOfMonth, endOfMonth);
+
+		log.info(
+				"=== getMonthlyEvents 종료 === deceasedProfileId: {}, 조회된 이벤트 수: {}",
+				deceasedProfileId,
+				result.size()
+		);
+
+		return result;
 	}
 
 	@Override
 	public List<CalendarEventRes> getDailyEvents(
-			Long userId,
+			Long deceasedProfileId,
 			String dateStr
 	) {
+
+		log.info(
+				"=== getDailyEvents 시작 === deceasedProfileId: {}, date: {}",
+				deceasedProfileId,
+				dateStr
+		);
 
 		LocalDate date = LocalDate.parse(dateStr);
 
@@ -56,20 +76,33 @@ public class CalendarServiceImpl implements CalendarService {
 
 		LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
-		return getEvents(userId, startOfDay, endOfDay);
+		List<CalendarEventRes> result =
+				getEvents(deceasedProfileId, startOfDay, endOfDay);
+
+		log.info(
+				"=== getDailyEvents 종료 === deceasedProfileId: {}, 조회된 이벤트 수: {}",
+				deceasedProfileId,
+				result.size()
+		);
+
+		return result;
 	}
 
 	/**
 	 * 캘린더 이벤트 조회
 	 */
 	private List<CalendarEventRes> getEvents(
-			Long userId,
+			Long deceasedProfileId,
 			LocalDateTime start,
 			LocalDateTime end
 	) {
 
 		return calendarEventRepository
-				.findByUserIdAndDateRange(userId, start, end)
+				.findByDeceasedProfileIdAndDateRange(
+						deceasedProfileId,
+						start,
+						end
+				)
 				.stream()
 				.map(this::fromCalendarEvent)
 				.sorted(
@@ -83,30 +116,6 @@ public class CalendarServiceImpl implements CalendarService {
 				.toList();
 	}
 
-	/**
-	 * 체크리스트 → CalendarEventRes
-	 */
-	private CalendarEventRes fromChecklist(
-			UserProcedureChecklist checklist
-	) {
-
-		return new CalendarEventRes(
-				null,
-				checklist.getUserProcedureChecklistId(),
-				checklist.getProcedure().getProcedureName(),
-				checklist.getProcedure().getDescription(),
-				checklist.getDueDate(),
-				checklist.getDueDate(),
-				checklist.getProcedure()
-						.getProcedureCategory()
-						.getCategoryName(),
-				checklist.getProcedure()
-						.getProcedureCategory()
-						.getColor(),
-				EventType.CHECKLIST,
-				checklist.isChecked()
-		);
-	}
 
 	/**
 	 * CalendarEvent → CalendarEventRes
@@ -117,27 +126,43 @@ public class CalendarServiceImpl implements CalendarService {
 
 		return new CalendarEventRes(
 				event.getCalendarEventId(),
+
+				event.getDeceasedProfile() != null
+						? event.getDeceasedProfile()
+						.getDeceasedProfileId()
+						: null,
+
+				event.getDeceasedProfile() != null
+						? event.getDeceasedProfile()
+						.getName()
+						: null,
+
 				event.getUserProcedureChecklist() != null
 						? event.getUserProcedureChecklist()
 						.getUserProcedureChecklistId()
 						: null,
+
 				event.getTitle(),
 				event.getDescription(),
 				event.getStartAt(),
 				event.getEndAt(),
+
 				event.getUserProcedureChecklist() != null
 						? event.getUserProcedureChecklist()
 						.getProcedure()
 						.getProcedureCategory()
 						.getCategoryName()
 						: null,
+
 				event.getUserProcedureChecklist() != null
 						? event.getUserProcedureChecklist()
 						.getProcedure()
 						.getProcedureCategory()
 						.getColor()
 						: null,
+
 				event.getEventType(),
+
 				event.getUserProcedureChecklist() != null
 						? event.getUserProcedureChecklist()
 						.isChecked()

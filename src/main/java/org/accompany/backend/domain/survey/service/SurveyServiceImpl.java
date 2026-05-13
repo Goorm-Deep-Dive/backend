@@ -2,6 +2,8 @@ package org.accompany.backend.domain.survey.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.calendar.event.ChecklistCreatedEvent;
+import org.accompany.backend.domain.calendar.repository.CalendarEventRepository;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.checklist.repository.ChecklistBulkRepository;
@@ -28,334 +30,347 @@ import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class SurveyServiceImpl implements SurveyService {
 
-    private final SurveyQuestionRepository surveyQuestionRepository;
-    private final ProcedureRepository procedureRepository;
-    private final ChecklistBulkRepository checklistBulkRepository;
-    private final SurveyBulkRepository surveyBulkRepository;
-    private final UserRepository userRepository;
-    private final SurveyAnswerRepository surveyAnswerRepository;
-    private final SurveyResponseRepository surveyResponseRepository;
-    private final UserProcedureChecklistRepository userProcedureChecklistRepository;
-    private final UserDocumentChecklistRepository userDocumentChecklistRepository;
+	private final SurveyQuestionRepository surveyQuestionRepository;
+	private final ProcedureRepository procedureRepository;
+	private final ChecklistBulkRepository checklistBulkRepository;
+	private final SurveyBulkRepository surveyBulkRepository;
+	private final UserRepository userRepository;
+	private final SurveyAnswerRepository surveyAnswerRepository;
+	private final SurveyResponseRepository surveyResponseRepository;
+	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
+	private final UserDocumentChecklistRepository userDocumentChecklistRepository;
+	private final CalendarEventRepository calendarEventRepository;
+	private final ApplicationEventPublisher eventPublisher;
 
 
-    @Override
-    public SurveyListRes getSurveyList(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+	@Override
+	public SurveyListRes getSurveyList(Long userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
-        if(deceasedProfile == null) {
-            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-        }
+		DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+		if (deceasedProfile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
 
-        if(deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED){
-            throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
-        }
+		if (deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED) {
+			throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
+		}
 
-        List<SurveyQuestion> questions = surveyQuestionRepository.findAllByOrderBySurveyQuestionIdAsc();
+		List<SurveyQuestion> questions = surveyQuestionRepository.findAllByOrderBySurveyQuestionIdAsc();
 
-        List<SurveyQuestionRes> surveyQuestionResList = questions.stream()
-                .map(question -> new SurveyQuestionRes(
-                        question.getSurveyQuestionId(),
-                        question.getSurveyQuestionText(),
-                        question.getQuestionType().name(),
-                        question.getRequirementType().name(),
-                        question.getDescription(),
-                        question.getSurveyAnswers().stream()
-                                .sorted(Comparator
-                                        .comparingInt((SurveyAnswer answer) -> answer.getAnswerType().getOrder())
-                                        .thenComparing(SurveyAnswer::getSurveyAnswerId)
-                                )
-                                .map(answer -> new SurveyAnswerRes(
-                                        answer.getSurveyAnswerId(),
-                                        answer.getSurveyAnswerText(),
-                                        answer.getNextQuestion() != null
-                                                ? answer.getNextQuestion().getSurveyQuestionId()
-                                                : null,
-                                        answer.getAnswerType()
-                                ))
-                                .toList()
-                ))
-                .toList();
+		List<SurveyQuestionRes> surveyQuestionResList = questions.stream()
+				.map(question -> new SurveyQuestionRes(
+						question.getSurveyQuestionId(),
+						question.getSurveyQuestionText(),
+						question.getQuestionType().name(),
+						question.getRequirementType().name(),
+						question.getDescription(),
+						question.getSurveyAnswers().stream()
+								.sorted(Comparator
+										.comparingInt((SurveyAnswer answer) -> answer.getAnswerType().getOrder())
+										.thenComparing(SurveyAnswer::getSurveyAnswerId)
+								)
+								.map(answer -> new SurveyAnswerRes(
+										answer.getSurveyAnswerId(),
+										answer.getSurveyAnswerText(),
+										answer.getNextQuestion() != null
+												? answer.getNextQuestion().getSurveyQuestionId()
+												: null,
+										answer.getAnswerType()
+								))
+								.toList()
+				))
+				.toList();
 
-        List<Long> selectedAnswerIds = List.of();
-        if(deceasedProfile.getSurveyStatus() == SurveyStatus.IN_PROGRESS){
-            selectedAnswerIds = surveyResponseRepository.findAllByDeceasedProfile(deceasedProfile).stream()
-                    .map(response -> response.getSurveyAnswer().getSurveyAnswerId())
-                    .toList();
-        }
+		List<Long> selectedAnswerIds = List.of();
+		if (deceasedProfile.getSurveyStatus() == SurveyStatus.IN_PROGRESS) {
+			selectedAnswerIds = surveyResponseRepository.findAllByDeceasedProfile(deceasedProfile).stream()
+					.map(response -> response.getSurveyAnswer().getSurveyAnswerId())
+					.toList();
+		}
 
-        return new SurveyListRes(
-                deceasedProfile.getSurveyStatus().name(),
-                surveyQuestionResList,
-                selectedAnswerIds
-        );
-    }
+		return new SurveyListRes(
+				deceasedProfile.getSurveyStatus().name(),
+				surveyQuestionResList,
+				selectedAnswerIds
+		);
+	}
 
-    @Override
-    @Transactional
-    public void skipSurvey(Long userId) {
-        log.info("[Survey] 설문조사 스킵 시작 - userId={}", userId);
+	@Override
+	@Transactional
+	public void skipSurvey(Long userId) {
+		log.info("[Survey] 설문조사 스킵 시작 - userId={}", userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.error("[Survey] 사용자 조회 실패 - userId={}", userId );
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
-                });
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> {
+					log.error("[Survey] 사용자 조회 실패 - userId={}", userId);
+					return new BusinessException(ErrorCode.USER_NOT_FOUND);
+				});
 
-        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
-        if(deceasedProfile == null){
-            log.error("[Survey] 활성 고인 프로필 없음 - userId={}", userId);
-            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-        }
+		DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+		if (deceasedProfile == null) {
+			log.error("[Survey] 활성 고인 프로필 없음 - userId={}", userId);
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
 
-        if(deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED
-            || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED ) {
-            throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
-        }
+		if (deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED
+				|| deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED) {
+			throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
+		}
 
-        deceasedProfile.updateStatus(SurveyStatus.SKIPPED);
+		deceasedProfile.updateStatus(SurveyStatus.SKIPPED);
 
-        LocalDate dateOfDeath = deceasedProfile.getDateOfDeath();
+		LocalDate dateOfDeath = deceasedProfile.getDateOfDeath();
 
-        List<Procedure> allProcedures = procedureRepository.findAllWithDocuments();
+		List<Procedure> allProcedures = procedureRepository.findAllWithDocuments();
 
-        List<UserProcedureChecklist> procedureChecklists = allProcedures.stream()
-                .map(procedure -> UserProcedureChecklist.builder()
-                        .dueDate(calculateDueDate(procedure, dateOfDeath))
-                        .deceasedProfile(deceasedProfile)
-                        .procedure(procedure)
-                        .isChecked(false)
-                        .build())
-                .toList();
+		List<UserProcedureChecklist> procedureChecklists = allProcedures.stream()
+				.map(procedure -> UserProcedureChecklist.builder()
+						.dueDate(calculateDueDate(procedure, dateOfDeath))
+						.deceasedProfile(deceasedProfile)
+						.procedure(procedure)
+						.isChecked(false)
+						.build())
+				.toList();
 
-        List<UserDocumentChecklist> documentChecklists = allProcedures.stream()
-                .flatMap(procedure -> procedure.getProcedureDocuments().stream())
-                .map(document -> UserDocumentChecklist.builder()
-                        .deceasedProfile(deceasedProfile)
-                        .procedureDocument(document)
-                        .isChecked(false)
-                        .build())
-                .toList();
+		List<UserDocumentChecklist> documentChecklists = allProcedures.stream()
+				.flatMap(procedure -> procedure.getProcedureDocuments().stream())
+				.map(document -> UserDocumentChecklist.builder()
+						.deceasedProfile(deceasedProfile)
+						.procedureDocument(document)
+						.isChecked(false)
+						.build())
+				.toList();
 
-        checklistBulkRepository.bulkInsertProcedureChecklists(procedureChecklists);
-        checklistBulkRepository.bulkInsertDocumentChecklists(documentChecklists);
+		checklistBulkRepository.bulkInsertProcedureChecklists(procedureChecklists);
+		checklistBulkRepository.bulkInsertDocumentChecklists(documentChecklists);
 
-        log.info("[Survey] 설문조사 스킵 완료 - userId={}, deceasedProfilelId={}, 생성된 체크리스트 수 ={}",
-                userId, deceasedProfile.getDeceasedProfileId(), allProcedures.size());
-    }
+		// 캘린더 이벤트 생성 요청
+		eventPublisher.publishEvent(
+				new ChecklistCreatedEvent(
+						deceasedProfile.getDeceasedProfileId()
+				)
+		);
 
-    @Override
-    public LocalDateTime calculateDueDate(Procedure procedure, LocalDate dateOfDeath) {
-        DueDateType type = procedure.getDueDateType();
-        DueDateUnit unit = procedure.getDueDateUnit();
-        Integer dueDate = procedure.getDueDate();
+		log.info("[Survey] 설문조사 스킵 완료 - userId={}, deceasedProfilelId={}, 생성된 체크리스트 수 ={}",
+				userId, deceasedProfile.getDeceasedProfileId(), allProcedures.size());
+	}
 
-        return switch(type) {
-            case IMMEDIATE -> dateOfDeath.atStartOfDay();
-            case RELATIVE -> addDuration(dateOfDeath, unit, dueDate).atStartOfDay();
-            case DEATH_MONTH -> dateOfDeath.withDayOfMonth(1).plusMonths(1).minusDays(1).atStartOfDay();
-            case DEATH_END_DAY -> {
-                LocalDate endOfMonth = dateOfDeath.withDayOfMonth(1).plusMonths(1).minusDays(1);
-                yield addDuration(endOfMonth, unit, dueDate).atStartOfDay();
-            }
-            case NONE -> null;
-        };
-    }
+	@Override
+	public LocalDateTime calculateDueDate(Procedure procedure, LocalDate dateOfDeath) {
+		DueDateType type = procedure.getDueDateType();
+		DueDateUnit unit = procedure.getDueDateUnit();
+		Integer dueDate = procedure.getDueDate();
 
-    private LocalDate addDuration(LocalDate base, DueDateUnit unit, Integer amount) {
-        return switch (unit) {
-            case YEAR -> base. plusYears(amount);
-            case MONTH -> base.plusMonths(amount);
-            case DAY -> base.plusDays(amount);
-        };
-    }
+		return switch (type) {
+			case IMMEDIATE -> dateOfDeath.atStartOfDay();
+			case RELATIVE -> addDuration(dateOfDeath, unit, dueDate).atStartOfDay();
+			case DEATH_MONTH -> dateOfDeath.withDayOfMonth(1).plusMonths(1).minusDays(1).atStartOfDay();
+			case DEATH_END_DAY -> {
+				LocalDate endOfMonth = dateOfDeath.withDayOfMonth(1).plusMonths(1).minusDays(1);
+				yield addDuration(endOfMonth, unit, dueDate).atStartOfDay();
+			}
+			case NONE -> null;
+		};
+	}
 
-    @Override
-    @Transactional
-    public SurveyTempSaveRes saveTempSurvey(Long userId, SurveySaveReq request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
-        if (deceasedProfile == null) {
-            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-        }
+	private LocalDate addDuration(LocalDate base, DueDateUnit unit, Integer amount) {
+		return switch (unit) {
+			case YEAR -> base.plusYears(amount);
+			case MONTH -> base.plusMonths(amount);
+			case DAY -> base.plusDays(amount);
+		};
+	}
 
-        if (deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED) {
-            throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
-        }
+	@Override
+	@Transactional
+	public SurveyTempSaveRes saveTempSurvey(Long userId, SurveySaveReq request) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+		DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+		if (deceasedProfile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
 
-        deceasedProfile.updateStatus(SurveyStatus.IN_PROGRESS);
-        surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
+		if (deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED) {
+			throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
+		}
 
-        List<SurveyResponse> responses = (request.answers() != null ? request.answers() : List.<SurveyAnswerIdReq>of()).stream()
-                .map(answer -> SurveyResponse.builder()
-                        .deceasedProfile(deceasedProfile)
-                        .surveyAnswer(surveyAnswerRepository.getReferenceById(answer.surveyAnswerId()))
-                        .build())
-                .toList();
+		deceasedProfile.updateStatus(SurveyStatus.IN_PROGRESS);
+		surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
 
-        surveyBulkRepository.bulkInsertSurveyResponses(responses);
+		List<SurveyResponse> responses = (request.answers() != null ? request.answers() : List.<SurveyAnswerIdReq>of()).stream()
+				.map(answer -> SurveyResponse.builder()
+						.deceasedProfile(deceasedProfile)
+						.surveyAnswer(surveyAnswerRepository.getReferenceById(answer.surveyAnswerId()))
+						.build())
+				.toList();
 
-        List<SurveyResponseRes> responseResList = responses.stream()
-                .map(response -> new SurveyResponseRes(
-                        response.getSurveyAnswer().getSurveyAnswerId()
-                ))
-                .toList();
+		surveyBulkRepository.bulkInsertSurveyResponses(responses);
 
-        return new SurveyTempSaveRes(
-                deceasedProfile.getSurveyStatus().name(),
-                responseResList
-        );
-    }
+		List<SurveyResponseRes> responseResList = responses.stream()
+				.map(response -> new SurveyResponseRes(
+						response.getSurveyAnswer().getSurveyAnswerId()
+				))
+				.toList();
 
-    @Override
-    @Transactional
-    public SurveySubmitRes submitSurvey(Long userId, SurveySaveReq request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+		return new SurveyTempSaveRes(
+				deceasedProfile.getSurveyStatus().name(),
+				responseResList
+		);
+	}
 
-        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
-        if (deceasedProfile == null) {
-            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-        }
-        if(deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED) {
-            throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
-        }
+	@Override
+	@Transactional
+	public SurveySubmitRes submitSurvey(Long userId, SurveySaveReq request) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
+		DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+		if (deceasedProfile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+		if (deceasedProfile.getSurveyStatus() == SurveyStatus.COMPLETED || deceasedProfile.getSurveyStatus() == SurveyStatus.SKIPPED) {
+			throw new BusinessException(ErrorCode.SURVEY_ALREADY_COMPLETED);
+		}
 
-        List<Long> answerIds = request.answers().stream()
-                .map(SurveyAnswerIdReq::surveyAnswerId)
-                .toList();
+		surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
 
-        List<SurveyResponse> responses = request.answers().stream()
-                .map(answer -> SurveyResponse.builder()
-                        .deceasedProfile(deceasedProfile)
-                        .surveyAnswer(surveyAnswerRepository.getReferenceById(answer.surveyAnswerId()))
-                        .build())
-                .toList();
-        surveyBulkRepository.bulkInsertSurveyResponses(responses);
+		List<Long> answerIds = request.answers().stream()
+				.map(SurveyAnswerIdReq::surveyAnswerId)
+				.toList();
 
-        List<SurveyAnswer> submittedAnswers =
-                surveyAnswerRepository.findAllWithProceduresAndQuestionByIds(answerIds);
+		List<SurveyResponse> responses = request.answers().stream()
+				.map(answer -> SurveyResponse.builder()
+						.deceasedProfile(deceasedProfile)
+						.surveyAnswer(surveyAnswerRepository.getReferenceById(answer.surveyAnswerId()))
+						.build())
+				.toList();
+		surveyBulkRepository.bulkInsertSurveyResponses(responses);
 
-        Set<Long> procedureIds = new HashSet<>();
-        Set<Long> unsureQuestionIds = new HashSet<>();
+		List<SurveyAnswer> submittedAnswers =
+				surveyAnswerRepository.findAllWithProceduresAndQuestionByIds(answerIds);
 
-        //survey 잘모름 -> 체크리스트 문항 생성과 동일
-        for (SurveyAnswer answer : submittedAnswers) {
-            String text = answer.getSurveyAnswerText();
+		Set<Long> procedureIds = new HashSet<>();
+		Set<Long> unsureQuestionIds = new HashSet<>();
 
-            for (SurveyAnswerProcedure sap : answer.getSurveyAnswerProcedures()) {
-                procedureIds.add(sap.getProcedure().getProcedureId());
-            }
-        }
+		//survey 잘모름 -> 체크리스트 문항 생성과 동일
+		for (SurveyAnswer answer : submittedAnswers) {
+			String text = answer.getSurveyAnswerText();
 
-        if (!unsureQuestionIds.isEmpty()) {
-            List<SurveyAnswer> unsureAnswers = surveyAnswerRepository
-                    .findAllWithProceduresByQuestionIds(unsureQuestionIds);
-            for (SurveyAnswer a : unsureAnswers) {
-                for (SurveyAnswerProcedure sap : a.getSurveyAnswerProcedures()) {
-                    procedureIds.add(sap.getProcedure().getProcedureId());
-                }
-            }
-        }
+			for (SurveyAnswerProcedure sap : answer.getSurveyAnswerProcedures()) {
+				procedureIds.add(sap.getProcedure().getProcedureId());
+			}
+		}
 
-        List<Procedure> answerProcedures = procedureIds.isEmpty()
-                ? List.of()
-                : procedureRepository.findAllWithDocumentsByIds(procedureIds);
+		if (!unsureQuestionIds.isEmpty()) {
+			List<SurveyAnswer> unsureAnswers = surveyAnswerRepository
+					.findAllWithProceduresByQuestionIds(unsureQuestionIds);
+			for (SurveyAnswer a : unsureAnswers) {
+				for (SurveyAnswerProcedure sap : a.getSurveyAnswerProcedures()) {
+					procedureIds.add(sap.getProcedure().getProcedureId());
+				}
+			}
+		}
 
-        List<Procedure> requiredProcedures = procedureRepository.findAllRequiredWithDocuments();
+		List<Procedure> answerProcedures = procedureIds.isEmpty()
+				? List.of()
+				: procedureRepository.findAllWithDocumentsByIds(procedureIds);
 
-        Set<Long> seenProcedureIds = new HashSet<>();
-        List<Procedure> procedures = new ArrayList<>();
-        for (Procedure p : answerProcedures) {
-            if (seenProcedureIds.add(p.getProcedureId())) {
-                procedures.add(p);
-            }
-        }
-        for (Procedure p : requiredProcedures) {
-            if (seenProcedureIds.add(p.getProcedureId())) {
-                procedures.add(p);
-            }
-        }
+		List<Procedure> requiredProcedures = procedureRepository.findAllRequiredWithDocuments();
 
-        LocalDate dateOfDeath = deceasedProfile.getDateOfDeath();
+		Set<Long> seenProcedureIds = new HashSet<>();
+		List<Procedure> procedures = new ArrayList<>();
+		for (Procedure p : answerProcedures) {
+			if (seenProcedureIds.add(p.getProcedureId())) {
+				procedures.add(p);
+			}
+		}
+		for (Procedure p : requiredProcedures) {
+			if (seenProcedureIds.add(p.getProcedureId())) {
+				procedures.add(p);
+			}
+		}
 
-        List<UserProcedureChecklist> procedureChecklists = procedures.stream()
-                .map(procedure -> UserProcedureChecklist.builder()
-                        .dueDate(calculateDueDate(procedure, dateOfDeath))
-                        .deceasedProfile(deceasedProfile)
-                        .procedure(procedure)
-                        .isChecked(false)
-                        .build())
-                .toList();
+		LocalDate dateOfDeath = deceasedProfile.getDateOfDeath();
 
-        List<UserDocumentChecklist> documentChecklists = procedures.stream()
-                .flatMap(procedure -> procedure.getProcedureDocuments().stream())
-                .map(document -> UserDocumentChecklist.builder()
-                        .deceasedProfile(deceasedProfile)
-                        .procedureDocument(document)
-                        .isChecked(false)
-                        .build())
-                .toList();
+		List<UserProcedureChecklist> procedureChecklists = procedures.stream()
+				.map(procedure -> UserProcedureChecklist.builder()
+						.dueDate(calculateDueDate(procedure, dateOfDeath))
+						.deceasedProfile(deceasedProfile)
+						.procedure(procedure)
+						.isChecked(false)
+						.build())
+				.toList();
 
-        checklistBulkRepository.bulkInsertProcedureChecklists(procedureChecklists);
-        checklistBulkRepository.bulkInsertDocumentChecklists(documentChecklists);
+		List<UserDocumentChecklist> documentChecklists = procedures.stream()
+				.flatMap(procedure -> procedure.getProcedureDocuments().stream())
+				.map(document -> UserDocumentChecklist.builder()
+						.deceasedProfile(deceasedProfile)
+						.procedureDocument(document)
+						.isChecked(false)
+						.build())
+				.toList();
 
-        deceasedProfile.updateStatus(SurveyStatus.COMPLETED);
+		checklistBulkRepository.bulkInsertProcedureChecklists(procedureChecklists);
+		checklistBulkRepository.bulkInsertDocumentChecklists(documentChecklists);
 
-        return new SurveySubmitRes(
-                deceasedProfile.getSurveyStatus().name(),
-                procedureChecklists.size(),
-                documentChecklists.size()
-        );
-    }
+		// 캘린더 이벤트 생성 요청
+		eventPublisher.publishEvent(
+				new ChecklistCreatedEvent(
+						deceasedProfile.getDeceasedProfileId()
+				)
+		);
 
-    @Override
-    @Transactional
-    public void resetSurvey(Long userId) {
-        log.info("[Survey] 설문조사 다시 하기 시작 - userId={}", userId);
+		deceasedProfile.updateStatus(SurveyStatus.COMPLETED);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.error("[Survey] 사용자 조회 실패 - userId={}", userId);
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
-                });
+		return new SurveySubmitRes(
+				deceasedProfile.getSurveyStatus().name(),
+				procedureChecklists.size(),
+				documentChecklists.size()
+		);
+	}
 
-        DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
-        if (deceasedProfile == null) {
-            log.error("[Survey] 활성 고인 프로필 없음 - userId={}", userId);
-            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-        }
+	@Override
+	@Transactional
+	public void resetSurvey(Long userId) {
+		log.info("[Survey] 설문조사 다시 하기 시작 - userId={}", userId);
 
-        userProcedureChecklistRepository.deleteAllByDeceasedProfile(deceasedProfile);
-        userDocumentChecklistRepository.deleteAllByDeceasedProfile(deceasedProfile);
-        surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> {
+					log.error("[Survey] 사용자 조회 실패 - userId={}", userId);
+					return new BusinessException(ErrorCode.USER_NOT_FOUND);
+				});
 
-        deceasedProfile.updateStatus(SurveyStatus.IN_PROGRESS);
+		DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
+		if (deceasedProfile == null) {
+			log.error("[Survey] 활성 고인 프로필 없음 - userId={}", userId);
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
 
-        log.info("[Survey] 설문조사 다시 하기 완료 - userId={}, deceasedProfileId={}",
-                userId, deceasedProfile.getDeceasedProfileId());
-    }
+		userProcedureChecklistRepository.deleteAllByDeceasedProfile(deceasedProfile);
+		userDocumentChecklistRepository.deleteAllByDeceasedProfile(deceasedProfile);
+		surveyResponseRepository.deleteAllByDeceasedProfile(deceasedProfile);
+
+		deceasedProfile.updateStatus(SurveyStatus.IN_PROGRESS);
+
+		log.info("[Survey] 설문조사 다시 하기 완료 - userId={}, deceasedProfileId={}",
+				userId, deceasedProfile.getDeceasedProfileId());
+	}
 
 }

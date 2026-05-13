@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.user.entity.User;
 
 import java.time.LocalDateTime;
@@ -24,6 +25,11 @@ public class CalendarEvent extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deceased_profile_id")
+    private DeceasedProfile deceasedProfile;
+
 
     /**
      * 체크리스트 기반 일정이면 연결
@@ -64,6 +70,7 @@ public class CalendarEvent extends BaseEntity {
     @Builder
     public CalendarEvent(
             User user,
+            DeceasedProfile deceasedProfile,
             UserProcedureChecklist userProcedureChecklist,
             String title,
             String description,
@@ -71,9 +78,12 @@ public class CalendarEvent extends BaseEntity {
             LocalDateTime endAt,
             EventType eventType,
             String googleCalendarId,
-            String googleEventId
+            String googleEventId,
+            SyncStatus syncStatus,
+            LocalDateTime lastSyncedAt
     ) {
         this.user = user;
+        this.deceasedProfile = deceasedProfile;
         this.userProcedureChecklist = userProcedureChecklist;
         this.title = title;
         this.description = description;
@@ -83,8 +93,11 @@ public class CalendarEvent extends BaseEntity {
         this.googleCalendarId = googleCalendarId;
         this.googleEventId = googleEventId;
 
-        this.syncStatus = SyncStatus.SYNCED;
-        this.lastSyncedAt = LocalDateTime.now();
+        this.syncStatus = syncStatus != null
+                ? syncStatus
+                : SyncStatus.PENDING;
+
+        this.lastSyncedAt = lastSyncedAt; // LocalDateTime.now();
     }
 
     /**
@@ -136,88 +149,3 @@ public class CalendarEvent extends BaseEntity {
         this.syncStatus = SyncStatus.PENDING;
     }
 }
-
-
-/*
-수정본정상작동시삭제요망
-
-package org.accompany.backend.domain.calendar.entity;
-
-import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.accompany.backend.domain.BaseEntity;
-import org.accompany.backend.domain.user.entity.User;
-
-import java.time.LocalDateTime;
-
-@Entity
-@Table(name = "calendar_events")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CalendarEvent extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long calendarEventId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Column(length = 200)
-    private String title;
-
-    @Lob
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    private LocalDateTime startAt;
-
-    private LocalDateTime endAt;
-
-    @Column(length = 255)
-    private String googleCalendarId;
-
-    @Column(length = 255)
-    private String googleEventId;
-
-    @Builder
-    public CalendarEvent(
-            User user,
-            String title,
-            String description,
-            LocalDateTime startAt,
-            LocalDateTime endAt,
-            String googleCalendarId,
-            String googleEventId
-    ) {
-        this.user = user;
-        this.title = title;
-        this.description = description;
-        this.startAt = startAt;
-        this.endAt = endAt;
-        this.googleCalendarId = googleCalendarId;
-        this.googleEventId = googleEventId;
-    }
-
-    public void updateSchedule(
-            String title,
-            String description,
-            LocalDateTime startAt,
-            LocalDateTime endAt
-    ) {
-        this.title = title;
-        this.description = description;
-        this.startAt = startAt;
-        this.endAt = endAt;
-    }
-
-    public void updateGoogleSyncInfo(String googleCalendarId, String googleEventId) {
-        this.googleCalendarId = googleCalendarId;
-        this.googleEventId = googleEventId;
-    }
-}
-*/
