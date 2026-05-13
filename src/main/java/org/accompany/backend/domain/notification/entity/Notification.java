@@ -8,6 +8,11 @@ import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.user.entity.User;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "notifications")
@@ -33,6 +38,19 @@ public class Notification extends BaseEntity {
     @Column(nullable = false)
     private boolean isRead = false;
 
+    @Column(unique = true, nullable = false, length = 36)
+    private String idempotencyKey;
+
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private NotificationDeliveryStatus deliveryStatus;
+
+    private LocalDateTime sentAt;
+
+    @Column(length = 500)
+    private String failureReason;
+
     @Builder
     public Notification(
             User user,
@@ -44,6 +62,8 @@ public class Notification extends BaseEntity {
         this.userProcedureChecklist = userProcedureChecklist;
         this.message = message;
         this.isRead = isRead;
+        this.idempotencyKey = UUID.randomUUID().toString();
+        this.deliveryStatus = NotificationDeliveryStatus.PENDING;
     }
 
     public void markAsRead() {
@@ -52,5 +72,15 @@ public class Notification extends BaseEntity {
 
     public void markAsUnread() {
         this.isRead = false;
+    }
+
+    public void markAsSent() {
+        this.deliveryStatus = NotificationDeliveryStatus.SENT;
+        this.sentAt = LocalDateTime.now();
+    }
+
+    public void markAsFailed(String reason) {
+        this.deliveryStatus = NotificationDeliveryStatus.FAILED;
+        this.failureReason = reason;
     }
 }
