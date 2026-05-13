@@ -5,11 +5,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.chat.dto.external.AiChatReq;
 import org.accompany.backend.domain.chat.dto.external.AiChatRes;
+import org.accompany.backend.global.code.ErrorCode;
+import org.accompany.backend.global.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
@@ -28,8 +31,6 @@ public class AiChatClient {
     @Value("${chatbot.internal-api-key}")
     private String aiChatApiKey;
 
-    private static final String FALLBACK_MESSAGE =
-            "현재 AI 서비스를 일시적으로 이용할 수 없습니다. 잠시 후 다시 시도해주세요.";
 
     public AiChatRes sendMessage(AiChatReq request) {
 
@@ -43,10 +44,6 @@ public class AiChatClient {
                     .retrieve()
                     .body(AiChatRes.class);
 
-            if (response == null || response.message() == null || response.message().isBlank()) {
-                return new AiChatRes(FALLBACK_MESSAGE);
-            }
-
             log.debug("[AI Chat] AI 응답 수신 완료 - userId={}, responseLength={}",
                     request.userId(),
                     response.message().length()
@@ -54,15 +51,16 @@ public class AiChatClient {
 
             return response;
 
+        } catch (RestClientResponseException e) {
+
+            log.error("[AI Chat] 챗봇/AI 서버 에러 응답 - userId={}, status={}",
+                    request.userId(), e.getStatusCode(), e);
+
+            throw new BusinessException(ErrorCode.AI_CHAT_SERVICE_UNAVAILABLE);
         } catch (RestClientException e) {
-
-            log.error("[AI Chat] AI 서버 호출 실패 - userId={}, baseUrl={}",
-                    request.userId(),
-                    aiChatBaseUrl,
-                    e
-            );
-
-            return new AiChatRes(FALLBACK_MESSAGE);
+            log.error("[AI Chat] 챗봇 서버 연결 실패 - userId={}, baseUrl={}",
+                    request.userId(), aiChatBaseUrl, e);
+            throw new BusinessException(ErrorCode.AI_CHAT_SERVICE_UNAVAILABLE);
         }
     }
 
@@ -78,6 +76,6 @@ public class AiChatClient {
                 .map(json -> {
                     try { return objectMapper.readValue(json, String.class); }
                     catch (Exception e) { return json; }
-                });
+                }).onErrorMap(e -> new BusinessException(ErrorCode.AI_CHAT_SERVICE_UNAVAILABLE));
     }
 }
