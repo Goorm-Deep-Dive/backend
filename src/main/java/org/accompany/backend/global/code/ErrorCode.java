@@ -44,6 +44,10 @@ public enum ErrorCode {
 	// 설문조사
 	SURVEY_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "SURVEY_001", "이미 완료된 설문조사입니다."),
 
+	// 알림
+	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "알림을 찾을 수 없습니다."),
+	NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근할 수 없습니다."),
+
 	// AI 챗봇
 	AI_CHAT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "CHAT_001", "AI 챗봇 서비스와 통신할 수 없습니다."),
 	// 서류
