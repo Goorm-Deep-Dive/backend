@@ -30,7 +30,6 @@ public class CalendarEvent extends BaseEntity {
     @JoinColumn(name = "deceased_profile_id")
     private DeceasedProfile deceasedProfile;
 
-
     /**
      * 체크리스트 기반 일정이면 연결
      * 일반 일정/구글 일정이면 null
@@ -42,7 +41,6 @@ public class CalendarEvent extends BaseEntity {
     @Column(nullable = false, length = 200)
     private String title;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String description;
 

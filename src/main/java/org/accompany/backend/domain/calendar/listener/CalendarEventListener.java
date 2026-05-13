@@ -35,7 +35,7 @@ public class CalendarEventListener {
 	@Transactional
 	public void handleChecklistCreated(ChecklistCreatedEvent event) {
 
-		Long deceasedProfileId = event.getDeceasedProfileId();
+		Long deceasedProfileId = event.deceasedProfileId();
 
 		log.info(
 				"[Calendar] 체크리스트 기반 일정 생성 시작 - deceasedProfileId={}",
