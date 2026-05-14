@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.calendar.entity.CalendarEvent;
 import org.accompany.backend.domain.calendar.entity.EventType;
-import org.accompany.backend.domain.calendar.event.ChecklistCreatedEvent;
+import org.accompany.backend.domain.calendar.event.CalendarUpdatedEvent;
 import org.accompany.backend.domain.calendar.repository.CalendarEventRepository;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
@@ -13,14 +13,14 @@ import org.accompany.backend.domain.deceasedProfile.repository.DeceasedProfileRe
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -28,138 +28,103 @@ import java.util.stream.Collectors;
 public class CalendarEventListener {
 
 	private final DeceasedProfileRepository deceasedProfileRepository;
-	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
+	private final UserProcedureChecklistRepository checklistRepository;
 	private final CalendarEventRepository calendarEventRepository;
 
-	@EventListener
-	@Transactional
-	public void handleChecklistCreated(ChecklistCreatedEvent event) {
+	@TransactionalEventListener(
+			phase = TransactionPhase.AFTER_COMMIT
+	)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void handleCalendarUpdated(CalendarUpdatedEvent event) {
 
-		Long deceasedProfileId = event.deceasedProfileId();
+		Long profileId = event.deceasedProfileId();
 
-		log.info(
-				"[Calendar] 체크리스트 기반 일정 생성 시작 - deceasedProfileId={}",
-				deceasedProfileId
-		);
+		log.info("[Calendar] 업데이트 시작 - profileId={}", profileId);
 
-		DeceasedProfile deceasedProfile = deceasedProfileRepository
-				.findById(deceasedProfileId)
-				.orElseThrow(() -> {
-					log.error(
-							"[Calendar] 고인 프로필 조회 실패 - deceasedProfileId={}",
-							deceasedProfileId
-					);
-					return new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-				});
+		DeceasedProfile profile = deceasedProfileRepository.findById(profileId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND));
 
-		User user = deceasedProfile.getUser();
+		User user = profile.getUser();
 
-		//OrderByDueDateAsc OrNOT
+		syncChecklistEvents(user, profile);
+
+		syncMemorialEvent(profile);
+
+		log.info("[Calendar] 업데이트 종료 - profileId={}", profileId);
+	}
+
+	/**
+	 * 체크리스트 일정 생성 / 수정
+	 */
+	private void syncChecklistEvents(User user, DeceasedProfile profile) {
+
 		List<UserProcedureChecklist> checklists =
-				userProcedureChecklistRepository
-						.findByDeceasedProfile_DeceasedProfileId(
-								deceasedProfileId
-						);
+				checklistRepository.findByDeceasedProfile_DeceasedProfileId(profile.getDeceasedProfileId());
 
-		log.info(
-				"[Calendar] 체크리스트 조회 완료 - userId={}, deceasedProfileId={}, checklistCount={}",
-				user.getUserId(),
-				deceasedProfileId,
-				checklists.size()
-		);
+		for (UserProcedureChecklist checklist : checklists) {
 
-		/**
-		 * 이미 생성된 체크리스트 일정 조회
-		 */
-		Set<Long> existingChecklistIds = calendarEventRepository
-				.findChecklistIdsByDeceasedProfileId(deceasedProfileId);
+			if (checklist.getDueDate() == null) {
+				continue;
+			}
 
-		log.info(
-				"[Calendar] 기존 일정 조회 완료 - deceasedProfileId={}, existingEventCount={}",
-				deceasedProfileId,
-				existingChecklistIds.size()
-		);
+			calendarEventRepository
+					.findByUserProcedureChecklistUserProcedureChecklistId(checklist.getUserProcedureChecklistId())
+					.ifPresentOrElse(
 
-		/**
-		 * dueDate 없는 체크리스트 제외
-		 */
-		long skippedCount = checklists.stream()
-				.filter(c -> c.getDueDate() == null)
-				.count();
-
-		if (skippedCount > 0) {
-			log.info(
-					"[Calendar] dueDate null 체크리스트 제외 - userId={}, deceasedProfileId={}, skippedCount={}",
-					user.getUserId(),
-					deceasedProfileId,
-					skippedCount
-			);
-		}
-
-		/**
-		 * 체크리스트 일정 생성
-		 */
-		List<CalendarEvent> calendarEvents = checklists.stream()
-
-				// dueDate 없는 경우 제외
-				.filter(c -> c.getDueDate() != null)
-
-				// 이미 생성된 일정 제외
-				.filter(c ->
-						!existingChecklistIds.contains(
-								c.getUserProcedureChecklistId()
-						)
-				)
-
-				.map(c -> toChecklistEvent(user, deceasedProfile, c))
-				.collect(Collectors.toList());
-
-		/**
-		 * 영면일 일정 생성
-		 */
-		createMemorialDayEventIfNeeded(user, deceasedProfile)
-				.ifPresent(calendarEvents::add);
-
-		log.info(
-				"[Calendar] 저장 대상 일정 생성 완료 - userId={}, deceasedProfileId={}, eventCount={}",
-				user.getUserId(),
-				deceasedProfileId,
-				calendarEvents.size()
-		);
-
-		if (!calendarEvents.isEmpty()) {
-
-			log.info(
-					"[Calendar] 캘린더 이벤트 저장 시작 - deceasedProfileId={}, eventCount={}",
-					deceasedProfileId,
-					calendarEvents.size()
-			);
-
-			calendarEventRepository.saveAll(calendarEvents);
-
-			log.info(
-					"[Calendar] 캘린더 이벤트 저장 완료 - deceasedProfileId={}, savedEventCount={}",
-					deceasedProfileId,
-					calendarEvents.size()
-			);
-		} else {
-
-			log.info(
-					"[Calendar] 저장할 캘린더 이벤트 없음 - deceasedProfileId={}",
-					deceasedProfileId
-			);
+							existing ->
+									existing.updateSchedule(
+											checklist.getProcedure().getProcedureName(),
+											checklist.getProcedure().getDescription(),
+											checklist.getDueDate(),
+											checklist.getDueDate().plusHours(1)
+									),
+							() -> calendarEventRepository.save(toChecklistEvent(user, profile, checklist)));
 		}
 	}
 
-	private CalendarEvent toChecklistEvent(
-			User user,
-			DeceasedProfile deceasedProfile,
-			UserProcedureChecklist checklist
+	/**
+	 * 영면일 일정 생성 / 수정 / 삭제
+	 */
+	private void syncMemorialEvent(
+			DeceasedProfile profile
 	) {
+
+		Optional<CalendarEvent> memorialEvent =
+				calendarEventRepository.findByDeceasedProfileDeceasedProfileIdAndEventType(profile.getDeceasedProfileId(), EventType.MEMORIAL_DAY);
+
+		if (profile.getDateOfDeath() == null) {
+			memorialEvent.ifPresent(calendarEventRepository::delete);
+			return;
+		}
+
+		memorialEvent.ifPresentOrElse(
+
+				existing -> existing.updateSchedule(
+						profile.getName() + " 영면일",
+						"고인의 영면일",
+						profile.getDateOfDeath().atStartOfDay(),
+						profile.getDateOfDeath().atStartOfDay().plusHours(1)
+				),
+
+				() -> calendarEventRepository.save(
+						CalendarEvent.builder()
+								.user(profile.getUser())
+								.deceasedProfile(profile)
+								.title(profile.getName() + " 영면일")
+								.description("고인의 영면일")
+								.startAt(profile.getDateOfDeath().atStartOfDay())
+								.endAt(profile.getDateOfDeath().atStartOfDay().plusHours(1))
+								.eventType(EventType.MEMORIAL_DAY)
+								.build()
+				)
+		);
+	}
+
+	private CalendarEvent toChecklistEvent(User user, DeceasedProfile profile, UserProcedureChecklist checklist) {
 
 		return CalendarEvent.builder()
 				.user(user)
-				.deceasedProfile(deceasedProfile)
+				.deceasedProfile(profile)
 				.userProcedureChecklist(checklist)
 				.title(checklist.getProcedure().getProcedureName())
 				.description(checklist.getProcedure().getDescription())
@@ -167,61 +132,5 @@ public class CalendarEventListener {
 				.endAt(checklist.getDueDate().plusHours(1))
 				.eventType(EventType.CHECKLIST)
 				.build();
-	}
-
-	private Optional<CalendarEvent> createMemorialDayEventIfNeeded(
-			User user,
-			DeceasedProfile deceasedProfile
-	) {
-
-		if (deceasedProfile.getDateOfDeath() == null) {
-
-			log.info(
-					"[Calendar] 영면일 없음 - memorial event 생성 스킵 - deceasedProfileId={}",
-					deceasedProfile.getDeceasedProfileId()
-			);
-
-			return Optional.empty();
-		}
-
-		boolean exists = calendarEventRepository
-				.existsByDeceasedProfile_DeceasedProfileIdAndEventType(
-						deceasedProfile.getDeceasedProfileId(),
-						EventType.MEMORIAL_DAY
-				);
-
-		if (exists) {
-
-			log.info(
-					"[Calendar] 영면일 일정 이미 존재 - deceasedProfileId={}",
-					deceasedProfile.getDeceasedProfileId()
-			);
-
-			return Optional.empty();
-		}
-
-		log.info(
-				"[Calendar] 영면일 일정 생성 - deceasedProfileId={}",
-				deceasedProfile.getDeceasedProfileId()
-		);
-
-		return Optional.of(
-				CalendarEvent.builder()
-						.user(user)
-						.deceasedProfile(deceasedProfile)
-						.title(deceasedProfile.getName() + " 영면일")
-						.description("고인 영면일 일정")
-						.startAt(
-								deceasedProfile.getDateOfDeath()
-										.atStartOfDay()
-						)
-						.endAt(
-								deceasedProfile.getDateOfDeath()
-										.atStartOfDay()
-										.plusHours(1)
-						)
-						.eventType(EventType.MEMORIAL_DAY)
-						.build()
-		);
 	}
 }

@@ -1,6 +1,6 @@
 package org.accompany.backend.domain.calendar.event;
 
-public record ChecklistCreatedEvent(
+public record CalendarUpdatedEvent(
 		Long deceasedProfileId
 ) {
 }
