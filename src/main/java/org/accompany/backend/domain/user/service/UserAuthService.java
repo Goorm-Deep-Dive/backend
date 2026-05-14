@@ -1,6 +1,5 @@
 package org.accompany.backend.domain.user.service;
 
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.accompany.backend.domain.user.entity.Role;

@@ -13,10 +13,10 @@ public record CalendarEventRes(
 		String description,
 		LocalDateTime startAt,
 		LocalDateTime endAt,
+		Long procedureCategoryId,
 		String category,  // procedure_category name (체크리스트만)
 		String categoryColor,   // procedure_category color (체크리스트만)
 		EventType eventType,       // "CHECKLIST", "GOOGLE", "USER_CUSTOM"
-//    String color, //google calendar color // 필요없음 지우기
 		Boolean checked
 ) {
 }

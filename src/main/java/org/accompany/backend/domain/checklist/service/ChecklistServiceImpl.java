@@ -2,6 +2,7 @@ package org.accompany.backend.domain.checklist.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.calendar.event.CalendarUpdatedEvent;
 import org.accompany.backend.domain.checklist.dto.ProcedureChecklistQueryDto;
 import org.accompany.backend.domain.checklist.dto.response.*;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
@@ -20,6 +21,7 @@ import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 	private final UserDocumentChecklistRepository userDocumentChecklistRepository;
 	private final ChecklistRepository checklistRepository;
 	private final SurveyService surveyService;
+	private final ApplicationEventPublisher applicationEventPublisher; // 영면일 이벤트 발행용
 
 
 	@Override
@@ -505,11 +508,17 @@ public class ChecklistServiceImpl implements ChecklistService {
 						.dueDate(dueDate)
 						.build();
 
-		//TODO: ChecklistCreatedEvent 추가
-
 		try {
 
 			UserProcedureChecklist saved = userProcedureChecklistRepository.save(checklist);
+
+			// 캘린더 이벤트 발행
+			applicationEventPublisher.publishEvent(
+					new CalendarUpdatedEvent(
+							profile.getDeceasedProfileId()
+					)
+			);
+
 			log.info("END createOptionalProcedure SUCCESS procedureId={}, userId={}, profileId={}, checklistId={}",
 					procedureId,
 					userId,

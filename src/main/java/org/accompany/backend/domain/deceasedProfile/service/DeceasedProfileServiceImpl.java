@@ -2,6 +2,7 @@ package org.accompany.backend.domain.deceasedProfile.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.calendar.event.CalendarUpdatedEvent;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.dto.request.DeceasedProfileCreateReq;
@@ -16,6 +17,7 @@ import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
 import org.accompany.backend.global.code.ErrorCode;
 import org.accompany.backend.global.exception.BusinessException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,188 +30,196 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class DeceasedProfileServiceImpl implements DeceasedProfileService {
 
-    private final DeceasedProfileRepository deceasedProfileRepository;
-    private final UserRepository userRepository;
-    private final UserProcedureChecklistRepository userProcedureChecklistRepository;
-    private final SurveyService surveyService;
+	private final DeceasedProfileRepository deceasedProfileRepository;
+	private final UserRepository userRepository;
+	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
+	private final SurveyService surveyService;
+	private final ApplicationEventPublisher applicationEventPublisher; // 영면일 이벤트 발행용
 
-    @Override
-    @Transactional
-    public DeceasedProfileRes createDeceasedProfile(Long userId, DeceasedProfileCreateReq request) {
-        log.info("[DeceasedProfile] 고인 정보 생성 시작 - userId={}", userId);
 
-        User user = getUser(userId);
-        validateDateOfDeath(request.dateOfDeath());
+	@Override
+	@Transactional
+	public DeceasedProfileRes createDeceasedProfile(Long userId, DeceasedProfileCreateReq request) {
+		log.info("[DeceasedProfile] 고인 정보 생성 시작 - userId={}", userId);
 
-        DeceasedProfile profile = DeceasedProfile.builder()
-                .user(user)
-                .name(request.name())
-                .dateOfDeath(request.dateOfDeath())
-                .build();
+		User user = getUser(userId);
+		validateDateOfDeath(request.dateOfDeath());
 
-        deceasedProfileRepository.save(profile);
+		DeceasedProfile profile = DeceasedProfile.builder()
+				.user(user)
+				.name(request.name())
+				.dateOfDeath(request.dateOfDeath())
+				.build();
 
-        user.updateActiveDeceasedProfile(profile);
-        log.info("[DeceasedProfile] 고인 정보 생성으로 현재 고인 정보 설정 변경 - userId={}, deceasedProfileId={}",
-                userId, profile.getDeceasedProfileId());
+		deceasedProfileRepository.save(profile);
 
-        log.info("[DeceasedProfile] 고인 정보 생성 완료 - userId={}, deceasedProfileId={}",
-                userId, profile.getDeceasedProfileId());
+		user.updateActiveDeceasedProfile(profile);
+		log.info("[DeceasedProfile] 고인 정보 생성으로 현재 고인 정보 설정 변경 - userId={}, deceasedProfileId={}",
+				userId, profile.getDeceasedProfileId());
 
-        return DeceasedProfileRes.from(profile);
-    }
+		// 영면일 일정 생성 이벤트 발행
+		applicationEventPublisher.publishEvent(new CalendarUpdatedEvent(profile.getDeceasedProfileId()));
 
-    @Override
-    public List<DeceasedProfileListRes> getDeceasedProfiles(Long userId) {
-        log.info("[DeceasedProfile] 고인 정보 목록 조회 시작 - userId={}", userId);
+		log.info("[DeceasedProfile] 고인 정보 생성 완료 - userId={}, deceasedProfileId={}",
+				userId, profile.getDeceasedProfileId());
 
-        User user = getUser(userId);
+		return DeceasedProfileRes.from(profile);
+	}
 
-        Long activeProfileId = user.getActiveDeceasedProfile() != null
-                ? user.getActiveDeceasedProfile().getDeceasedProfileId()
-                : null;
+	@Override
+	public List<DeceasedProfileListRes> getDeceasedProfiles(Long userId) {
+		log.info("[DeceasedProfile] 고인 정보 목록 조회 시작 - userId={}", userId);
 
-        List<DeceasedProfile> profiles = deceasedProfileRepository
-                .findAllByUserUserIdOrderByDateOfDeathDescCreatedAtDesc(userId);
+		User user = getUser(userId);
 
-        return profiles.stream()
-                .map(profile -> new DeceasedProfileListRes(
-                        profile.getDeceasedProfileId(),
-                        profile.getName(),
-                        profile.getDateOfDeath(),
-                        activeProfileId != null && activeProfileId.equals(profile.getDeceasedProfileId())
-                ))
-                .sorted((left, right) -> Boolean.compare(right.active(), left.active()))
-                .toList();
-    }
+		Long activeProfileId = user.getActiveDeceasedProfile() != null
+				? user.getActiveDeceasedProfile().getDeceasedProfileId()
+				: null;
 
-    @Override
-    public DeceasedProfileRes getActiveDeceasedProfile(Long userId) {
-        log.info("[DeceasedProfile] 현재 고인 정보 조회 시작 - userId={}", userId);
+		List<DeceasedProfile> profiles = deceasedProfileRepository
+				.findAllByUserUserIdOrderByDateOfDeathDescCreatedAtDesc(userId);
 
-        User user = getUser(userId);
+		return profiles.stream()
+				.map(profile -> new DeceasedProfileListRes(
+						profile.getDeceasedProfileId(),
+						profile.getName(),
+						profile.getDateOfDeath(),
+						activeProfileId != null && activeProfileId.equals(profile.getDeceasedProfileId())
+				))
+				.sorted((left, right) -> Boolean.compare(right.active(), left.active()))
+				.toList();
+	}
 
-        DeceasedProfile profile = user.getActiveDeceasedProfile();
-        if (profile == null) {
-            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-        }
+	@Override
+	public DeceasedProfileRes getActiveDeceasedProfile(Long userId) {
+		log.info("[DeceasedProfile] 현재 고인 정보 조회 시작 - userId={}", userId);
 
-        return DeceasedProfileRes.from(profile);
-    }
+		User user = getUser(userId);
 
-    @Override
-    @Transactional
-    public void modifyDeceasedProfile(Long userId, Long deceasedProfileId, DeceasedProfileUpdateReq request) {
-        log.info("[DeceasedProfile] 고인 정보 수정 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
 
-        DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
+		return DeceasedProfileRes.from(profile);
+	}
 
-        validateDateOfDeath(request.dateOfDeath());
-        LocalDate beforeDateOfDeath = profile.getDateOfDeath();
+	@Override
+	@Transactional
+	public void modifyDeceasedProfile(Long userId, Long deceasedProfileId, DeceasedProfileUpdateReq request) {
+		log.info("[DeceasedProfile] 고인 정보 수정 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
 
-        profile.updateDeceasedProfile(request.name(), request.dateOfDeath());
+		DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
 
-        if (request.dateOfDeath() != null && !beforeDateOfDeath.equals(request.dateOfDeath())) {
-            log.info("[DeceasedProfile] 영면일 변경 감지 - userId={}, deceasedProfileId={}, before={}, after={}",
-                    userId, deceasedProfileId, beforeDateOfDeath, request.dateOfDeath());
+		validateDateOfDeath(request.dateOfDeath());
+		LocalDate beforeDateOfDeath = profile.getDateOfDeath();
 
-            int updatedCount = updateProcedureChecklistDueDates(profile);
+		profile.updateDeceasedProfile(request.name(), request.dateOfDeath());
 
-            log.info("[DeceasedProfile] 절차 체크리스트 마감일 재계산 완료 - userId={}, deceasedProfileId={}, updatedCount={}",
-                    userId, deceasedProfileId, updatedCount);
-        }
+		if (request.dateOfDeath() != null && !beforeDateOfDeath.equals(request.dateOfDeath())) {
+			log.info("[DeceasedProfile] 영면일 변경 감지 - userId={}, deceasedProfileId={}, before={}, after={}",
+					userId, deceasedProfileId, beforeDateOfDeath, request.dateOfDeath());
 
-        log.info("[DeceasedProfile] 고인 정보 수정 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
-    }
+			int updatedCount = updateProcedureChecklistDueDates(profile);
 
-    @Override
-    @Transactional
-    public void changeActiveDeceasedProfile(Long userId, Long deceasedProfileId) {
-        log.info("[DeceasedProfile] 현재 고인 정보 변경 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+			log.info("[DeceasedProfile] 절차 체크리스트 마감일 재계산 완료 - userId={}, deceasedProfileId={}, updatedCount={}",
+					userId, deceasedProfileId, updatedCount);
+		}
 
-        User user = getUser(userId);
-        DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
+		// 영면일 일정 수정 이벤트 발행
+		applicationEventPublisher.publishEvent(new CalendarUpdatedEvent(profile.getDeceasedProfileId()));
 
-        user.updateActiveDeceasedProfile(profile);
+		log.info("[DeceasedProfile] 고인 정보 수정 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+	}
 
-        log.info("[DeceasedProfile] 현재 고인 정보 변경 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
-    }
+	@Override
+	@Transactional
+	public void changeActiveDeceasedProfile(Long userId, Long deceasedProfileId) {
+		log.info("[DeceasedProfile] 현재 고인 정보 변경 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
 
-    @Override
-    public DeceasedSurveyStatusRes getDeceasedSurveyStatus(Long userId) {
-        log.info("[DeceasedProfile] 현재 고인 정보 설문조사 상태 조회 - userId={}", userId);
+		User user = getUser(userId);
+		DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
 
-        User user = getUser(userId);
-        DeceasedProfile profile = user.getActiveDeceasedProfile();
+		user.updateActiveDeceasedProfile(profile);
 
-        if (profile == null) {
-            throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-        }
+		log.info("[DeceasedProfile] 현재 고인 정보 변경 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+	}
 
-        return new DeceasedSurveyStatusRes(profile.getSurveyStatus());
-    }
+	@Override
+	public DeceasedSurveyStatusRes getDeceasedSurveyStatus(Long userId) {
+		log.info("[DeceasedProfile] 현재 고인 정보 설문조사 상태 조회 - userId={}", userId);
 
-    @Override
-    @Transactional
-    public void deleteDeceasedProfile(Long userId, Long deceasedProfileId) {
-        log.info("[DeceasedProfile] 삭제 요청 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+		User user = getUser(userId);
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
 
-        User user = getUser(userId);
-        DeceasedProfile activeDeceasedProfile = user.getActiveDeceasedProfile();
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
 
-        if(activeDeceasedProfile.getDeceasedProfileId().equals(deceasedProfileId)){
-            log.warn("[DeceasedProfile] 활성 고인 정보 삭제 시도 차단 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
-            throw new BusinessException(ErrorCode.CANNOT_DELETE_ACTIVE_DECEASED_PROFILE);
-        }
+		return new DeceasedSurveyStatusRes(profile.getSurveyStatus());
+	}
 
-        DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
+	@Override
+	@Transactional
+	public void deleteDeceasedProfile(Long userId, Long deceasedProfileId) {
+		log.info("[DeceasedProfile] 삭제 요청 시작 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
 
-        log.info("[DeceasedProfile] 삭제 대상 조회 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+		User user = getUser(userId);
+		DeceasedProfile activeDeceasedProfile = user.getActiveDeceasedProfile();
 
-        deceasedProfileRepository.delete(profile);
+		if (activeDeceasedProfile.getDeceasedProfileId().equals(deceasedProfileId)) {
+			log.warn("[DeceasedProfile] 활성 고인 정보 삭제 시도 차단 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+			throw new BusinessException(ErrorCode.CANNOT_DELETE_ACTIVE_DECEASED_PROFILE);
+		}
 
-        log.info("[DeceasedProfile] 삭제 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
-    }
+		DeceasedProfile profile = getOwnedDeceasedProfile(userId, deceasedProfileId);
 
-    private int updateProcedureChecklistDueDates(DeceasedProfile profile) {
+		log.info("[DeceasedProfile] 삭제 대상 조회 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
 
-        List<UserProcedureChecklist> checklists =
-                userProcedureChecklistRepository.findAllWithProcedureByDeceasedProfileId(
-                        profile.getDeceasedProfileId()
-                );
+		deceasedProfileRepository.delete(profile);
 
-        checklists.forEach(checklist ->
-                checklist.updateDueDate(
-                        surveyService.calculateDueDate(
-                                checklist.getProcedure(),
-                                profile.getDateOfDeath()
-                        )
-                )
-        );
+		log.info("[DeceasedProfile] 삭제 완료 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+	}
 
-        return checklists.size();
-    }
+	private int updateProcedureChecklistDueDates(DeceasedProfile profile) {
 
-    private User getUser(Long userId) {
-        return userRepository.findByIdWithActiveDeceasedProfile(userId)
-                .orElseThrow(() -> {
-                    log.error("[DeceasedProfile] 사용자 조회 실패 - userId={}", userId);
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
-                });
-    }
+		List<UserProcedureChecklist> checklists =
+				userProcedureChecklistRepository.findAllWithProcedureByDeceasedProfileId(
+						profile.getDeceasedProfileId()
+				);
 
-    private DeceasedProfile getOwnedDeceasedProfile(Long userId, Long deceasedProfileId) {
-        return deceasedProfileRepository.findByDeceasedProfileIdAndUserUserId(deceasedProfileId, userId)
-                .orElseThrow(() -> {
-                    log.error("[DeceasedProfile] 사용자 소유 고인 정보 조회 실패 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
-                    return new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
-                });
-    }
+		checklists.forEach(checklist ->
+				checklist.updateDueDate(
+						surveyService.calculateDueDate(
+								checklist.getProcedure(),
+								profile.getDateOfDeath()
+						)
+				)
+		);
 
-    private void validateDateOfDeath(LocalDate dateOfDeath) {
-        if (dateOfDeath != null && dateOfDeath.isAfter(LocalDate.now())) {
-            throw new BusinessException(ErrorCode.INVALID_DATE_OF_DEATH);
-        }
-    }
+		return checklists.size();
+	}
+
+	private User getUser(Long userId) {
+		return userRepository.findByIdWithActiveDeceasedProfile(userId)
+				.orElseThrow(() -> {
+					log.error("[DeceasedProfile] 사용자 조회 실패 - userId={}", userId);
+					return new BusinessException(ErrorCode.USER_NOT_FOUND);
+				});
+	}
+
+	private DeceasedProfile getOwnedDeceasedProfile(Long userId, Long deceasedProfileId) {
+		return deceasedProfileRepository.findByDeceasedProfileIdAndUserUserId(deceasedProfileId, userId)
+				.orElseThrow(() -> {
+					log.error("[DeceasedProfile] 사용자 소유 고인 정보 조회 실패 - userId={}, deceasedProfileId={}", userId, deceasedProfileId);
+					return new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+				});
+	}
+
+	private void validateDateOfDeath(LocalDate dateOfDeath) {
+		if (dateOfDeath != null && dateOfDeath.isAfter(LocalDate.now())) {
+			throw new BusinessException(ErrorCode.INVALID_DATE_OF_DEATH);
+		}
+	}
 
 }

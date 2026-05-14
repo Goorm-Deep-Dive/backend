@@ -2,7 +2,7 @@ package org.accompany.backend.domain.survey.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.accompany.backend.domain.calendar.event.ChecklistCreatedEvent;
+import org.accompany.backend.domain.calendar.event.CalendarUpdatedEvent;
 import org.accompany.backend.domain.calendar.repository.CalendarEventRepository;
 import org.accompany.backend.domain.checklist.entity.UserDocumentChecklist;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
@@ -54,7 +54,7 @@ public class SurveyServiceImpl implements SurveyService {
 	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
 	private final UserDocumentChecklistRepository userDocumentChecklistRepository;
 	private final CalendarEventRepository calendarEventRepository;
-	private final ApplicationEventPublisher eventPublisher;
+	private final ApplicationEventPublisher applicationEventPublisher;
 
 
 	@Override
@@ -160,12 +160,8 @@ public class SurveyServiceImpl implements SurveyService {
 		checklistBulkRepository.bulkInsertProcedureChecklists(procedureChecklists);
 		checklistBulkRepository.bulkInsertDocumentChecklists(documentChecklists);
 
-		// 캘린더 이벤트 생성 요청
-		eventPublisher.publishEvent(
-				new ChecklistCreatedEvent(
-						deceasedProfile.getDeceasedProfileId()
-				)
-		);
+		// 캘린더 이벤트 생성 이벤트 발행
+		applicationEventPublisher.publishEvent(new CalendarUpdatedEvent(deceasedProfile.getDeceasedProfileId()));
 
 		log.info("[Survey] 설문조사 스킵 완료 - userId={}, deceasedProfilelId={}, 생성된 체크리스트 수 ={}",
 				userId, deceasedProfile.getDeceasedProfileId(), allProcedures.size());
@@ -331,11 +327,7 @@ public class SurveyServiceImpl implements SurveyService {
 		checklistBulkRepository.bulkInsertDocumentChecklists(documentChecklists);
 
 		// 캘린더 이벤트 생성 요청
-		eventPublisher.publishEvent(
-				new ChecklistCreatedEvent(
-						deceasedProfile.getDeceasedProfileId()
-				)
-		);
+		applicationEventPublisher.publishEvent(new CalendarUpdatedEvent(deceasedProfile.getDeceasedProfileId()));
 
 		deceasedProfile.updateStatus(SurveyStatus.COMPLETED);
 

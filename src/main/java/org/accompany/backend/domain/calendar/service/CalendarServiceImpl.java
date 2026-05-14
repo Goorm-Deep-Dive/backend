@@ -5,8 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.calendar.dto.response.CalendarEventRes;
 import org.accompany.backend.domain.calendar.entity.CalendarEvent;
 import org.accompany.backend.domain.calendar.repository.CalendarEventRepository;
-import org.accompany.backend.global.security.principal.CustomUserPrincipal;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
+import org.accompany.backend.domain.user.entity.User;
+import org.accompany.backend.domain.user.repository.UserRepository;
+import org.accompany.backend.global.code.ErrorCode;
+import org.accompany.backend.global.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,18 +21,26 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true) // 읽기 외에 추가시 readOnly 제거
+@Transactional(readOnly = true)
 @Slf4j
 public class CalendarServiceImpl implements CalendarService {
 
 	private final CalendarEventRepository calendarEventRepository;
+	private final UserRepository userRepository;
 
 	@Override
-	public List<CalendarEventRes> getMonthlyEventsByUser(Long userId, int year, int month) {
+	public List<CalendarEventRes> getMonthlyEvents(Long userId, int year, int month) {
 
-		log.info(
-				"=== CalendarServiceImpl.getMonthlyEventsByUser === userId: {}, year: {}, month: {}",
-				userId, year, month );
+		log.info("[Calendar] 월별 조회 시작 - userId={}, year={}, month={}", userId, year, month);
+
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		DeceasedProfile deceasedProfile =
+				user.getActiveDeceasedProfile();
+
+		if (deceasedProfile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
 
 		YearMonth yearMonth = YearMonth.of(year, month);
 
@@ -40,37 +51,39 @@ public class CalendarServiceImpl implements CalendarService {
 				yearMonth.atEndOfMonth().atTime(23, 59, 59);
 
 		List<CalendarEventRes> result =
-				calendarEventRepository
-						.findByUserIdAndDateRange(
-								userId,
-								startOfMonth,
-								endOfMonth
-						)
-						.stream()
-						.map(this::fromCalendarEvent)
-						.sorted(
-								Comparator.comparing(
-										CalendarEventRes::startAt,
-										Comparator.nullsLast(
-												Comparator.naturalOrder()
-										)
-								)
-						)
-						.toList();
+				getEvents(
+						deceasedProfile.getDeceasedProfileId(),
+						startOfMonth,
+						endOfMonth
+				);
 
-		log.info(
-				"=== CalendarServiceImpl.getMonthlyEventsByUser === userId: {}, count: {}",
-				userId, result.size()
-		);
+		log.info("[Calendar] 월별 조회 종료 - deceasedProfileId={}, count={}", deceasedProfile.getDeceasedProfileId(), result.size());
 
 		return result;
 	}
 
 	@Override
-	public List<CalendarEventRes> getDailyEventsByUser(Long userId, String dateStr) {
+	public List<CalendarEventRes> getDailyEvents(
+			Long userId,
+			String dateStr
+	) {
+
 		log.info(
-				"=== CalendarServiceImpl.getDailyEventsByUser 시작 === userId: {}, date: {}",
-				userId, dateStr );
+				"[Calendar] 일별 조회 시작 - userId={}, date={}",
+				userId, dateStr);
+
+		User user = userRepository.findById(userId)
+				.orElseThrow(() ->
+						new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		DeceasedProfile deceasedProfile =
+				user.getActiveDeceasedProfile();
+
+		if (deceasedProfile == null) {
+			throw new BusinessException(
+					ErrorCode.DECEASED_PROFILE_NOT_FOUND
+			);
+		}
 
 		LocalDate date = LocalDate.parse(dateStr);
 
@@ -81,98 +94,15 @@ public class CalendarServiceImpl implements CalendarService {
 				date.atTime(23, 59, 59);
 
 		List<CalendarEventRes> result =
-				calendarEventRepository
-						.findByUserIdAndDateRange(
-								userId,
-								startOfDay,
-								endOfDay
-						)
-						.stream()
-						.map(this::fromCalendarEvent)
-						.sorted(
-								Comparator.comparing(
-										CalendarEventRes::startAt,
-										Comparator.nullsLast(
-												Comparator.naturalOrder()
-										)
-								)
-						)
-						.toList();
+				getEvents(
+						deceasedProfile.getDeceasedProfileId(),
+						startOfDay,
+						endOfDay
+				);
 
 		log.info(
-				"=== CalendarServiceImpl.getDailyEventsByUser 종료 === userId: {}, count: {}",
-				userId, result.size() );
-
-		return result;
-
-
-	}
-
-	@Override
-	@PreAuthorize("@calendarSecurity.isOwner(principal.userId, #deceasedProfileId)")
-	public List<CalendarEventRes> getMonthlyEventsByDeceasedProfile(
-			CustomUserPrincipal principal,
-			Long deceasedProfileId,
-			int year,
-			int month
-	) {
-
-		log.info(
-				"=== CalendarServiceImpl.getMonthlyEventsByDeceasedProfile 시작 === userId: {}, deceasedProfileId: {}, year: {}, month: {}",
-				principal.getUserId(),
-				deceasedProfileId,
-				year,
-				month
-		);
-
-		YearMonth yearMonth = YearMonth.of(year, month);
-
-		LocalDateTime startOfMonth =
-				yearMonth.atDay(1).atStartOfDay();
-
-		LocalDateTime endOfMonth =
-				yearMonth.atEndOfMonth().atTime(23, 59, 59);
-
-		List<CalendarEventRes> result =
-				getEvents(deceasedProfileId, startOfMonth, endOfMonth);
-
-		log.info(
-				"=== CalendarServiceImpl.getMonthlyEventsByDeceasedProfile 종료 === deceasedProfileId: {}, 조회된 이벤트 수: {}",
-				deceasedProfileId,
-				result.size()
-		);
-
-		return result;
-	}
-
-	@Override
-	@PreAuthorize("@calendarSecurity.isOwner(principal.userId, #deceasedProfileId)")
-	public List<CalendarEventRes> getDailyEventsByDeceasedProfile(
-			CustomUserPrincipal principal,
-			Long deceasedProfileId,
-			String dateStr
-	) {
-
-		log.info(
-				"=== CalendarServiceImpl.getDailyEventsByDeceasedProfile 시작 === userId: {}, deceasedProfileId: {}, date: {}",
-				principal.getUserId(),
-				deceasedProfileId,
-				dateStr
-		);
-
-		LocalDate date = LocalDate.parse(dateStr);
-
-		LocalDateTime startOfDay = date.atStartOfDay();
-
-		LocalDateTime endOfDay = date.atTime(23, 59, 59);
-
-		List<CalendarEventRes> result =
-				getEvents(deceasedProfileId, startOfDay, endOfDay);
-
-		log.info(
-				"=== CalendarServiceImpl.getDailyEventsByDeceasedProfile 종료 === deceasedProfileId: {}, 조회된 이벤트 수: {}",
-				deceasedProfileId,
-				result.size()
+				"[Calendar] 일별 조회 종료 - deceasedProfileId={}, count={}",
+				deceasedProfile.getDeceasedProfileId(), result.size()
 		);
 
 		return result;
@@ -188,7 +118,7 @@ public class CalendarServiceImpl implements CalendarService {
 	) {
 
 		return calendarEventRepository
-				.findByDeceasedProfileIdAndDateRange(
+				.findByDeceasedProfile_DeceasedProfileIdAndDateRange(
 						deceasedProfileId,
 						start,
 						end
@@ -206,9 +136,8 @@ public class CalendarServiceImpl implements CalendarService {
 				.toList();
 	}
 
-
 	/**
-	 * CalendarEvent → CalendarEventRes
+	 * CalendarEvent → Response
 	 */
 	private CalendarEventRes fromCalendarEvent(
 			CalendarEvent event
@@ -217,23 +146,45 @@ public class CalendarServiceImpl implements CalendarService {
 		return new CalendarEventRes(
 				event.getCalendarEventId(),
 
+				// deceasedProfileId
 				event.getDeceasedProfile() != null
-						? event.getDeceasedProfile().getDeceasedProfileId()
+						? event.getDeceasedProfile()
+						.getDeceasedProfileId()
 						: null,
 
+				// deceasedName
 				event.getDeceasedProfile() != null
-						? event.getDeceasedProfile().getName()
+						? event.getDeceasedProfile()
+						.getName()
 						: null,
 
+				// userProcedureChecklistId
 				event.getUserProcedureChecklist() != null
-						? event.getUserProcedureChecklist().getUserProcedureChecklistId()
+						? event.getUserProcedureChecklist()
+						.getUserProcedureChecklistId()
 						: null,
 
+				// title
 				event.getTitle(),
+
+				// description
 				event.getDescription(),
+
+				// startAt
 				event.getStartAt(),
+
+				// endAt
 				event.getEndAt(),
 
+				// procedureCategoryId
+				event.getUserProcedureChecklist() != null
+						? event.getUserProcedureChecklist()
+						.getProcedure()
+						.getProcedureCategory()
+						.getProcedureCategoryId()
+						: null,
+
+				// category
 				event.getUserProcedureChecklist() != null
 						? event.getUserProcedureChecklist()
 						.getProcedure()
@@ -241,6 +192,7 @@ public class CalendarServiceImpl implements CalendarService {
 						.getCategoryName()
 						: null,
 
+				// categoryColor
 				event.getUserProcedureChecklist() != null
 						? event.getUserProcedureChecklist()
 						.getProcedure()
@@ -248,12 +200,13 @@ public class CalendarServiceImpl implements CalendarService {
 						.getColor()
 						: null,
 
+				// eventType
 				event.getEventType(),
 
+				// checked
 				event.getUserProcedureChecklist() != null
-						? event.getUserProcedureChecklist()
+						&& event.getUserProcedureChecklist()
 						.isChecked()
-						: null
 		);
 	}
 }
