@@ -33,6 +33,7 @@ public class NotificationBulkRepository {
                     created_at,
                     updated_at
                 ) values (?, ?, ?, ?, ?, ?, ?::ending_schema.notification_delivery_status, ?, ?)
+                on conflict (idempotency_key) do nothing
                 """;
 
         LocalDateTime now = LocalDateTime.now();

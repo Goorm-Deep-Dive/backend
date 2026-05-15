@@ -24,8 +24,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     long countByUserAndIsReadFalse(User user);
 
-    boolean existsByIdempotencyKey(String idempotencyKey);
-
     @Query("SELECT upc FROM UserProcedureChecklist upc " +
            "JOIN FETCH upc.deceasedProfile dp " +
            "JOIN FETCH dp.user u " +
