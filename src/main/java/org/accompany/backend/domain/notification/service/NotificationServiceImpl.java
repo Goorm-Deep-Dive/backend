@@ -37,7 +37,10 @@ public class NotificationServiceImpl implements NotificationService {
                         n.getMessage(),
                         n.isRead(),
                         n.getCreatedAt(),
-                        n.getUserProcedureChecklist().getUserProcedureChecklistId()
+                        n.getUserProcedureChecklist().getUserProcedureChecklistId(),
+                        n.getDeceasedProfile().getDeceasedProfileId(),
+                        n.getDeceasedProfile().getName(),
+                        n.getUserProcedureChecklist().getDueDate()
                 ))
                 .toList();
 

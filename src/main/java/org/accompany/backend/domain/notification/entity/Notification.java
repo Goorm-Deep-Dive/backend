@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.accompany.backend.domain.BaseEntity;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.user.entity.User;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -32,6 +33,10 @@ public class Notification extends BaseEntity {
     @JoinColumn(name = "user_procedure_checklist_id", nullable = false)
     private UserProcedureChecklist userProcedureChecklist;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deceased_profile_id", nullable = false)
+    private DeceasedProfile deceasedProfile;
+
     @Column(length = 500)
     private String message;
 
@@ -55,14 +60,19 @@ public class Notification extends BaseEntity {
     public Notification(
             User user,
             UserProcedureChecklist userProcedureChecklist,
+            DeceasedProfile deceasedProfile,
             String message,
-            boolean isRead
+            boolean isRead,
+            String idempotencyKey
     ) {
         this.user = user;
         this.userProcedureChecklist = userProcedureChecklist;
+        this.deceasedProfile = deceasedProfile;
         this.message = message;
         this.isRead = isRead;
-        this.idempotencyKey = UUID.randomUUID().toString();
+        this.idempotencyKey = (idempotencyKey != null)
+                ? idempotencyKey
+                : UUID.randomUUID().toString();
         this.deliveryStatus = NotificationDeliveryStatus.PENDING;
     }
 

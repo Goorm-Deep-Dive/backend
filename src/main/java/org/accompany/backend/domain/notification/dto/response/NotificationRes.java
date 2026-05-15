@@ -7,6 +7,9 @@ public record NotificationRes(
         String message,
         boolean isRead,
         LocalDateTime createdAt,
-        Long userProcedureChecklistId
+        Long userProcedureChecklistId,
+        Long deceasedProfileId,
+        String deceasedName,
+        LocalDateTime dueDate
 ) {
 }
