@@ -73,7 +73,8 @@ public class User extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String googleRefreshToken;
 
-    @Column(length = 255)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(columnDefinition = "TEXT")
     private String fcmToken;
 
     @OneToOne(fetch = FetchType.LAZY)
