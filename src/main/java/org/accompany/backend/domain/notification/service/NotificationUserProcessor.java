@@ -42,10 +42,6 @@ public class NotificationUserProcessor {
 
             String idempotencyKey = buildIdempotencyKey(profileId, today);
 
-            if (notificationRepository.existsByIdempotencyKey(idempotencyKey)) {
-                continue;
-            }
-
             Optional<UserProcedureChecklist> closestOpt = profileChecklists.stream()
                     .min(Comparator
                             .comparing(UserProcedureChecklist::getDueDate)
