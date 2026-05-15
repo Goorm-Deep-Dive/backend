@@ -73,6 +73,9 @@ public class User extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String googleRefreshToken;
 
+    @Column(length = 255)
+    private String fcmToken;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "active_deceased_profile_id")
     private DeceasedProfile activeDeceasedProfile;
@@ -121,6 +124,10 @@ public class User extends BaseEntity {
         if (googleRefreshToken != null) {
             this.googleRefreshToken = googleRefreshToken;
         }
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     public void updateNotification(boolean isNotificationEnabled) {
