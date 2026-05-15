@@ -96,12 +96,14 @@ public class ChecklistServiceImpl implements ChecklistService {
 				checklistRepository.findProceduresWithChecklist(categoryId, profileId);
 
 		// 5. DTO 변환
+
 		List<ChecklistCategoryProcedureRes.Procedure> procedures =
 				rows.stream()
 						.map(this::toProcedureRes)
 						.sorted(Comparator.comparing((ChecklistCategoryProcedureRes.Procedure p) ->
 										SurveyRequirementType.REQUIRED.getLabel().equals(p.priority()) ? 1 : 3
 								)
+								/// immediate -> relative -> none ///thenCompating
 								.thenComparing(ChecklistCategoryProcedureRes.Procedure::remainingDays, Comparator.nullsLast(Integer::compareTo)))
 						.toList();
 
