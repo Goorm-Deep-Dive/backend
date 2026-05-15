@@ -103,7 +103,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 						.sorted(Comparator.comparing((ChecklistCategoryProcedureRes.Procedure p) ->
 										SurveyRequirementType.REQUIRED.getLabel().equals(p.priority()) ? 1 : 3
 								)
-								/// immediate -> relative -> none ///thenCompating
+								/// immediate -> relative -> none ///thenComparing
 								.thenComparing(ChecklistCategoryProcedureRes.Procedure::remainingDays, Comparator.nullsLast(Integer::compareTo)))
 						.toList();
 

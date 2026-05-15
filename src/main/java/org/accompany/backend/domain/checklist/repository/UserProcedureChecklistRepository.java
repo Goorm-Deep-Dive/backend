@@ -2,6 +2,7 @@ package org.accompany.backend.domain.checklist.repository;
 
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
+import org.accompany.backend.domain.procedure.entity.DueDateType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,11 +20,11 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
 	Optional<UserProcedureChecklist> findByUserProcedureChecklistId(Long userProcedureChecklistId);
 
 	@Query("""
-		select upc
-		from UserProcedureChecklist upc
-		join fetch upc.procedure
-		where upc.deceasedProfile.deceasedProfileId = :deceasedProfileId
-	""")
+				select upc
+				from UserProcedureChecklist upc
+				join fetch upc.procedure
+				where upc.deceasedProfile.deceasedProfileId = :deceasedProfileId
+			""")
 	List<UserProcedureChecklist> findAllWithProcedureByDeceasedProfileId(
 			@Param("deceasedProfileId") Long deceasedProfileId
 	);
@@ -41,4 +42,31 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
 	findByDeceasedProfile_DeceasedProfileId(
 			Long deceasedProfileId
 	);
+
+	@Query("""
+    SELECT upc
+    FROM UserProcedureChecklist upc
+    LEFT JOIN CalendarEvent ce
+        ON ce.userProcedureChecklist = upc
+    WHERE upc.deceasedProfile.deceasedProfileId = :profileId
+      AND upc.isChecked = false
+      AND upc.procedure.dueDateType IN :dueDateTypes
+      AND ce.calendarEventId IS NULL
+    """)
+	List<UserProcedureChecklist> findPendingTasksByTypes(
+			@Param("profileId") Long profileId,
+			@Param("dueDateTypes") List<DueDateType> dueDateTypes
+	);
+
+	default List<UserProcedureChecklist> findPendingTasks(Long profileId) {
+
+		return findPendingTasksByTypes(
+				profileId,
+				List.of(
+						DueDateType.NONE,
+						DueDateType.IMMEDIATE
+				)
+		);
+	}
+
 }

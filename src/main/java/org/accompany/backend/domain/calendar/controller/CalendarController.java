@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.accompany.backend.domain.calendar.dto.response.CalendarEventRes;
+import org.accompany.backend.domain.calendar.dto.response.PendingTaskRes;
 import org.accompany.backend.domain.calendar.service.CalendarService;
 import org.accompany.backend.global.code.SuccessCode;
 import org.accompany.backend.global.response.ApiResponse;
@@ -58,4 +59,17 @@ public class CalendarController {
 
 		return ApiResponse.success(SuccessCode.OK, calendarService.getDailyEvents(principal.getUserId(), date));
 	}
+
+	@Operation( summary = "처리 필요 과업 목록 조회", description = "아직 캘린더에 추가되지 않은 과업 목록을 조회합니다.")
+	@GetMapping("/pending-tasks")
+	public ResponseEntity<ApiResponse<List<PendingTaskRes>>> getPendingTasks(
+			@AuthenticationPrincipal CustomUserPrincipal principal
+	) {
+
+		return ApiResponse.success(SuccessCode.OK,
+				calendarService.getPendingTasks(principal.getUserId())
+		);
+	}
+
+
 }
