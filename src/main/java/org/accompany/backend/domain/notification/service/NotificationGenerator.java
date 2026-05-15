@@ -1,0 +1,62 @@
+package org.accompany.backend.domain.notification.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.notification.repository.NotificationRepository;
+import org.accompany.backend.domain.procedure.entity.DueDateType;
+import org.accompany.backend.domain.user.entity.User;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class NotificationGenerator {
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final List<DueDateType> EXCLUDED_DUE_DATE_TYPES =
+            List.of(DueDateType.IMMEDIATE, DueDateType.NONE);
+
+    private final NotificationRepository notificationRepository;
+    private final NotificationUserProcessor userProcessor;
+
+    public void generate() {
+        log.info("[NotificationGenerator] 전체 알림 생성 시작");
+
+        LocalDate today = LocalDate.now(KST);
+        LocalDateTime todayStart = today.atStartOfDay();
+
+        List<UserProcedureChecklist> notificationTargetChecklists = notificationRepository
+                .findNotificationTargetChecklists(todayStart, EXCLUDED_DUE_DATE_TYPES);
+
+        Map<User, List<UserProcedureChecklist>> byUser = notificationTargetChecklists.stream()
+                .collect(Collectors.groupingBy(c -> c.getDeceasedProfile().getUser()));
+
+        log.info("[NotificationGenerator] 대상 사용자 수={}, 후보 체크리스트 수={}",
+                byUser.size(), notificationTargetChecklists.size());
+
+        int successCount = 0;
+        int failCount = 0;
+
+        for (Map.Entry<User, List<UserProcedureChecklist>> entry : byUser.entrySet()) {
+            try {
+                userProcessor.process(entry.getKey(), entry.getValue(), today);
+                successCount++;
+            } catch (Exception e) {
+                failCount++;
+                log.error("[NotificationGenerator] 사용자 알림 생성 실패 - userId={}",
+                        entry.getKey().getUserId(), e);
+            }
+        }
+
+        log.info("[NotificationGenerator] 전체 알림 생성 완료 - 성공={}, 실패={}",
+                successCount, failCount);
+    }
+}
