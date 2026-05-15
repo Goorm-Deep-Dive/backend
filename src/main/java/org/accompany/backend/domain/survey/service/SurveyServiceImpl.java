@@ -174,7 +174,7 @@ public class SurveyServiceImpl implements SurveyService {
 		Integer dueDate = procedure.getDueDate();
 
 		return switch (type) {
-			case IMMEDIATE -> dateOfDeath.atStartOfDay();
+			case IMMEDIATE -> null;
 			case RELATIVE -> addDuration(dateOfDeath, unit, dueDate).atStartOfDay();
 			case DEATH_MONTH -> dateOfDeath.withDayOfMonth(1).plusMonths(1).minusDays(1).atStartOfDay();
 			case DEATH_END_DAY -> {

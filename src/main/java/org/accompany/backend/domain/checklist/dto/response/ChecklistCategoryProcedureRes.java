@@ -14,5 +14,6 @@ public record ChecklistCategoryProcedureRes(
 				Integer remainingDays,
 				boolean checked,
 				String priority
+				//due_date_type
 		) {}
 	}
