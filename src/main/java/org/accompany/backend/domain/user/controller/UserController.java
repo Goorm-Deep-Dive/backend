@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.accompany.backend.domain.user.dto.request.FcmTokenReq;
 import org.accompany.backend.domain.user.dto.request.UserNotificationUpdateReq;
 import org.accompany.backend.domain.user.dto.response.UserProfileRes;
 import org.accompany.backend.domain.user.service.UserService;
@@ -46,6 +47,17 @@ public class UserController {
             @Valid @RequestBody UserNotificationUpdateReq request
     ) {
         userService.updateNotification(principal.getUserId(), request.notificationEnabled());
+
+        return ApiResponse.success(SuccessCode.OK);
+    }
+
+    @PostMapping("/me/fcm-token")
+    @Operation(summary = "FCM 토큰 등록", description = "프론트엔드에서 발급받은 FCM 토큰을 저장합니다.")
+    public ResponseEntity<ApiResponse<Void>> updateFcmToken(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @Valid @RequestBody FcmTokenReq request
+    ) {
+        userService.updateFcmToken(principal.getUserId(), request.fcmToken());
 
         return ApiResponse.success(SuccessCode.OK);
     }

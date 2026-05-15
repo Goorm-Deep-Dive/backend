@@ -61,6 +61,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void updateFcmToken(Long userId, String fcmToken) {
+
+        log.info("[User] FCM 토큰 등록 시작: userId={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        user.updateFcmToken(fcmToken);
+
+        log.info("[User] FCM 토큰 등록 완료: userId={}", userId);
+    }
+
+    @Override
+    @Transactional
     public void linkGoogleAccount(Long userId, String googleProviderUserId, String googleAccessToken, String googleRefreshToken) {
         log.info("[User] 구글 계정 연동 시작: userId={}", userId);
 
