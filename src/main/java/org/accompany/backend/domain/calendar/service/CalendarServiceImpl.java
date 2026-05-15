@@ -3,8 +3,11 @@ package org.accompany.backend.domain.calendar.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.calendar.dto.response.CalendarEventRes;
+import org.accompany.backend.domain.calendar.dto.response.PendingTaskRes;
 import org.accompany.backend.domain.calendar.entity.CalendarEvent;
 import org.accompany.backend.domain.calendar.repository.CalendarEventRepository;
+import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.user.entity.User;
 import org.accompany.backend.domain.user.repository.UserRepository;
@@ -27,6 +30,8 @@ public class CalendarServiceImpl implements CalendarService {
 
 	private final CalendarEventRepository calendarEventRepository;
 	private final UserRepository userRepository;
+	private final UserProcedureChecklistRepository userProcedureChecklistRepository;
+
 
 	@Override
 	public List<CalendarEventRes> getMonthlyEvents(Long userId, int year, int month) {
@@ -35,8 +40,7 @@ public class CalendarServiceImpl implements CalendarService {
 
 		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-		DeceasedProfile deceasedProfile =
-				user.getActiveDeceasedProfile();
+		DeceasedProfile deceasedProfile = user.getActiveDeceasedProfile();
 
 		if (deceasedProfile == null) {
 			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
@@ -44,18 +48,13 @@ public class CalendarServiceImpl implements CalendarService {
 
 		YearMonth yearMonth = YearMonth.of(year, month);
 
-		LocalDateTime startOfMonth =
-				yearMonth.atDay(1).atStartOfDay();
+		LocalDateTime startOfMonth = yearMonth.atDay(1).atStartOfDay();
 
 		LocalDateTime endOfMonth =
 				yearMonth.atEndOfMonth().atTime(23, 59, 59);
 
 		List<CalendarEventRes> result =
-				getEvents(
-						deceasedProfile.getDeceasedProfileId(),
-						startOfMonth,
-						endOfMonth
-				);
+				getEvents(deceasedProfile.getDeceasedProfileId(), startOfMonth, endOfMonth);
 
 		log.info("[Calendar] 월별 조회 종료 - deceasedProfileId={}, count={}", deceasedProfile.getDeceasedProfileId(), result.size());
 
@@ -64,8 +63,7 @@ public class CalendarServiceImpl implements CalendarService {
 
 	@Override
 	public List<CalendarEventRes> getDailyEvents(
-			Long userId,
-			String dateStr
+			Long userId, String dateStr
 	) {
 
 		log.info(
@@ -112,9 +110,7 @@ public class CalendarServiceImpl implements CalendarService {
 	 * 캘린더 이벤트 조회
 	 */
 	private List<CalendarEventRes> getEvents(
-			Long deceasedProfileId,
-			LocalDateTime start,
-			LocalDateTime end
+			Long deceasedProfileId, LocalDateTime start, LocalDateTime end
 	) {
 
 		return calendarEventRepository
@@ -208,5 +204,38 @@ public class CalendarServiceImpl implements CalendarService {
 						&& event.getUserProcedureChecklist()
 						.isChecked()
 		);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<PendingTaskRes> getPendingTasks(Long userId) {
+
+		log.info("[calendar] 처리 필요 과업 조회 시작 - userId={}", userId);
+
+		User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		DeceasedProfile profile = user.getActiveDeceasedProfile();
+
+		if (profile == null) {
+			throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
+		}
+
+		List<UserProcedureChecklist> tasks =
+				userProcedureChecklistRepository.findPendingTasks(
+						profile.getDeceasedProfileId()
+				);
+
+		List<PendingTaskRes> result = tasks.stream()
+				.map(PendingTaskRes::from)
+				.toList();
+
+		log.info(
+				"[calendar] 처리 필요 과업 조회 완료 - userId={}, profileId={}, pendingTaskCount={}",
+				userId,
+				profile.getDeceasedProfileId(),
+				result.size()
+		);
+
+		return result;
 	}
 }

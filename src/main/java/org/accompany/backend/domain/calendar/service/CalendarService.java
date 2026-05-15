@@ -1,6 +1,7 @@
 package org.accompany.backend.domain.calendar.service;
 
 import org.accompany.backend.domain.calendar.dto.response.CalendarEventRes;
+import org.accompany.backend.domain.calendar.dto.response.PendingTaskRes;
 
 import java.util.List;
 
@@ -22,4 +23,9 @@ public interface CalendarService {
 			Long userId,
 			String dateStr
 	);
+
+	/**
+	 * 처리 필요 과업 조회
+	 */
+	List<PendingTaskRes> getPendingTasks(Long userId);
 }
