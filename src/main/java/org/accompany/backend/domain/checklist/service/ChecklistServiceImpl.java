@@ -131,7 +131,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 		);
 	}
 
-	private Integer calculateRemainingDays(LocalDateTime dueDate) {
+	public Integer calculateRemainingDays(LocalDateTime dueDate) {
 		if (dueDate == null) return null;
 
 		LocalDate today = LocalDate.now();
