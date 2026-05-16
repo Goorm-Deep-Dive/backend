@@ -34,16 +34,18 @@ pipeline {
             steps {
                 withCredentials([
                     file(credentialsId: 'application.yml', variable: 'APP_YML'),
+                    file(credentialsId: 'firebase-service-account', variable: 'FIREBASE_KEY'),
                     string(credentialsId: 'db-name', variable: 'DB_NAME'),
                     string(credentialsId: 'db-user', variable: 'DB_USER'),
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
                 ]) {
                     sh '''
                     cp "$APP_YML" ./application.yml
-                    chmod 644 ./application.yml
+                    cp "$FIREBASE_KEY" ./firebase-admin-key.json
+                    chmod 644 ./application.yml ./firebase-admin-key.json
 
                     echo "current dir: $(pwd)"
-                    ls -al ./application.yml
+                    ls -al ./application.yml ./firebase-admin-key.json
 
                     docker stop "$CONTAINER_NAME" || true
                     docker rm "$CONTAINER_NAME" || true
@@ -57,6 +59,7 @@ pipeline {
                         --spring.config.location=file:/app/application.yml
 
                     docker cp ./application.yml "$CONTAINER_NAME:/app/application.yml"
+                    docker cp ./firebase-admin-key.json "$CONTAINER_NAME:/app/firebase-admin-key.json"
 
                     docker start "$CONTAINER_NAME"
                     '''
