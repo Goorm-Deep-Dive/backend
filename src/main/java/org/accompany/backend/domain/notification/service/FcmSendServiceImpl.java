@@ -19,8 +19,7 @@ public class FcmSendServiceImpl implements FcmSendService {
 
     @Override
     public FcmSendResult send(String fcmToken, FcmMessagePayload payload) {
-        log.info("[FCM] 발송 시작 - notificationId={}, deceasedName={}",
-                payload.notificationId(), payload.deceasedName());
+        log.info("[FCM] 발송 시작 - notificationId={}", payload.notificationId());
 
         Notification notification = Notification.builder()
                 .setTitle(payload.deceasedName() + "님")
@@ -44,7 +43,7 @@ public class FcmSendServiceImpl implements FcmSendService {
         } catch (FirebaseMessagingException e) {
             log.error("[FCM] 발송 실패 - notificationId={}, errorCode={}, reason={}",
                     payload.notificationId(), e.getErrorCode(), e.getMessage());
-            return FcmSendResult.failure(e.getMessage());
+            return FcmSendResult.failure("FCM_SEND_FAILED:" + e.getErrorCode());
         }
     }
 }

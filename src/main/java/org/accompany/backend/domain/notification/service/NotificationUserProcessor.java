@@ -10,11 +10,11 @@ import org.accompany.backend.domain.notification.repository.NotificationBulkRepo
 import org.accompany.backend.domain.notification.repository.NotificationRepository;
 import org.accompany.backend.domain.user.entity.User;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +30,6 @@ public class NotificationUserProcessor {
     private final ChecklistServiceImpl checklistService;
     private final FcmSendService fcmSendService;
 
-    @Transactional
     public void process(User user, List<UserProcedureChecklist> notificationTargetChecklists, LocalDate today) {
         log.info("[NotificationUserProcessor] 시작 - userId={}", user.getUserId());
 
@@ -79,9 +78,10 @@ public class NotificationUserProcessor {
             return;
         }
 
+        // 1. bulk insert (자체 트랜잭션)
         notificationBulkRepository.bulkInsert(toInsert);
 
-        // bulk insert 후 PENDING 알림들을 영속성 컨텍스트로 가져옴 (dirty checking 활용)
+        // 2. PENDING 알림 조회 (별도 트랜잭션)
         List<String> idempotencyKeys = toInsert.stream()
                 .map(Notification::getIdempotencyKey)
                 .toList();
@@ -89,17 +89,16 @@ public class NotificationUserProcessor {
         List<Notification> pendingNotifications = notificationRepository
                 .findByIdempotencyKeysAndStatus(idempotencyKeys, NotificationDeliveryStatus.PENDING);
 
-        // FCM 발송
-        int successCount = 0;
-        int failureCount = 0;
+        // 3. FCM 발송 (트랜잭션 외부에서 외부 네트워크 호출)
+        List<Long> sentIds = new ArrayList<>();
+        Map<Long, String> failedReasons = new HashMap<>();
 
         String fcmToken = user.getFcmToken();
         boolean hasToken = fcmToken != null && !fcmToken.isBlank();
 
         for (Notification notification : pendingNotifications) {
             if (!hasToken) {
-                notification.markAsFailed("FCM 토큰 미등록");
-                failureCount++;
+                failedReasons.put(notification.getNotificationId(), "FCM 토큰 미등록");
                 continue;
             }
 
@@ -112,16 +111,18 @@ public class NotificationUserProcessor {
             FcmSendResult result = fcmSendService.send(fcmToken, payload);
 
             if (result.success()) {
-                notification.markAsSent();
-                successCount++;
+                sentIds.add(notification.getNotificationId());
             } else {
-                notification.markAsFailed(result.failureReason());
-                failureCount++;
+                failedReasons.put(notification.getNotificationId(), result.failureReason());
             }
         }
 
+        // 4. status 일괄 업데이트 (각각 자체 트랜잭션)
+        notificationBulkRepository.bulkUpdateToSent(sentIds);
+        notificationBulkRepository.bulkUpdateToFailed(failedReasons);
+
         log.info("[NotificationUserProcessor] 완료 - userId={}, 생성={}, 발송성공={}, 발송실패={}",
-                user.getUserId(), toInsert.size(), successCount, failureCount);
+                user.getUserId(), toInsert.size(), sentIds.size(), failedReasons.size());
     }
 
     private String buildIdempotencyKey(Long profileId, LocalDate today) {
