@@ -66,6 +66,9 @@ dependencies {
     // Discord Logback Appender
     implementation 'com.github.napstr:logback-discord-appender:1.0.0'
 
+    // Firebase Admin SDK (FCM 푸시 알림 발송용)
+    implementation 'com.google.firebase:firebase-admin:9.3.0'
+
 }
 
 tasks.named('test') {

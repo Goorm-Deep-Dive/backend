@@ -8,7 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
@@ -49,6 +51,55 @@ public class NotificationBulkRepository {
                     ps.setString(7, NotificationDeliveryStatus.PENDING.name());
                     ps.setTimestamp(8, Timestamp.valueOf(now));
                     ps.setTimestamp(9, Timestamp.valueOf(now));
+                });
+    }
+
+    public void bulkUpdateToSent(List<Long> notificationIds) {
+        if (notificationIds.isEmpty()) {
+            return;
+        }
+
+        String sql = """
+                update ending_schema.notifications
+                set delivery_status = ?::ending_schema.notification_delivery_status,
+                    sent_at = ?,
+                    updated_at = ?
+                where notification_id = ?
+                """;
+
+        LocalDateTime now = LocalDateTime.now();
+
+        jdbcTemplate.batchUpdate(sql, notificationIds, notificationIds.size(),
+                (ps, id) -> {
+                    ps.setString(1, NotificationDeliveryStatus.SENT.name());
+                    ps.setTimestamp(2, Timestamp.valueOf(now));
+                    ps.setTimestamp(3, Timestamp.valueOf(now));
+                    ps.setLong(4, id);
+                });
+    }
+
+    public void bulkUpdateToFailed(Map<Long, String> idToReason) {
+        if (idToReason.isEmpty()) {
+            return;
+        }
+
+        String sql = """
+                update ending_schema.notifications
+                set delivery_status = ?::ending_schema.notification_delivery_status,
+                    failure_reason = ?,
+                    updated_at = ?
+                where notification_id = ?
+                """;
+
+        LocalDateTime now = LocalDateTime.now();
+        List<Map.Entry<Long, String>> entries = new ArrayList<>(idToReason.entrySet());
+
+        jdbcTemplate.batchUpdate(sql, entries, entries.size(),
+                (ps, entry) -> {
+                    ps.setString(1, NotificationDeliveryStatus.FAILED.name());
+                    ps.setString(2, entry.getValue());
+                    ps.setTimestamp(3, Timestamp.valueOf(now));
+                    ps.setLong(4, entry.getKey());
                 });
     }
 }

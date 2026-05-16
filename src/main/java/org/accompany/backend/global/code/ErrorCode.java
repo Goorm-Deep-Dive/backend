@@ -47,6 +47,7 @@ public enum ErrorCode {
 	// 알림
 	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "알림을 찾을 수 없습니다."),
 	NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근할 수 없습니다."),
+	NOTIFICATION_FCM_TOKEN_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "NOTIFICATION_003", "FCM 토큰이 등록되지 않았습니다."),
 
 	// AI 챗봇
 	AI_CHAT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "CHAT_001", "AI 챗봇 서비스와 통신할 수 없습니다."),

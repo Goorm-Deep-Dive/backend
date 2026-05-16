@@ -1,5 +1,6 @@
 application.yml
 application-prod.yml
+secrets/
 HELP.md
 .gradle
 build/
