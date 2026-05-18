@@ -1,11 +1,13 @@
 application.yml
 application-prod.yml
+secrets/
 HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+
 
 ### STS ###
 .apt_generated
@@ -41,3 +43,6 @@ out/
 ### log ###
 logs/
 *.log
+
+# firebase
+secrets/firebase-service-account.json

@@ -2,6 +2,7 @@ package org.accompany.backend.domain.notification.repository;
 
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.notification.entity.Notification;
+import org.accompany.backend.domain.notification.entity.NotificationDeliveryStatus;
 import org.accompany.backend.domain.procedure.entity.DueDateType;
 import org.accompany.backend.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,4 +37,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<UserProcedureChecklist> findNotificationTargetChecklists(
             @Param("todayStart") LocalDateTime todayStart,
             @Param("excludedTypes") List<DueDateType> excludedTypes);
+
+    @Query("SELECT n FROM Notification n " +
+           "JOIN FETCH n.deceasedProfile " +
+           "WHERE n.idempotencyKey IN :keys " +
+           "AND n.deliveryStatus = :status")
+    List<Notification> findByIdempotencyKeysAndStatus(
+            @Param("keys") List<String> keys,
+            @Param("status") NotificationDeliveryStatus status);
 }

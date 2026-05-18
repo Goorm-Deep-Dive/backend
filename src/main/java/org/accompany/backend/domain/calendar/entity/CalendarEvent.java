@@ -114,6 +114,17 @@ public class CalendarEvent extends BaseEntity {
     }
 
     /**
+     * 일정 시간 수정
+     */
+    public void updateSchedule(
+            LocalDateTime startAt,
+            LocalDateTime endAt
+    ) {
+        this.startAt = startAt;
+        this.endAt = endAt;
+    }
+
+    /**
      * 구글 동기화 정보 수정
      */
     public void updateGoogleSyncInfo(

@@ -43,7 +43,6 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
 	Optional<CalendarEvent> findByGoogleEventId(String googleEventId);
 
 
-
 	/**
 	 * 체크리스트 기반 일정 조회
 	 */
@@ -59,4 +58,5 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
 			EventType eventType
 	);
 
+	boolean existsByUserProcedureChecklist_UserProcedureChecklistId(Long userProcedureChecklistId);
 }
