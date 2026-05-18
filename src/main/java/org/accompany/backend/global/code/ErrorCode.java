@@ -28,18 +28,25 @@ public enum ErrorCode {
 	// 체크리스트
 	CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CHECKLIST_001", "카테고리를 찾을 수 없습니다."),
 	CHECKLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "CHECKLIST_002", "사용자의 체크리스트를 찾을 수 없습니다."),
-	CHECKLIST_DELETE_FORBIDDEN(HttpStatus.BAD_REQUEST,"CHECKLIST_003", "선택 항목만 삭제할 수 있습니다."),
-	CHECKLIST_ALREADY_EXISTS(HttpStatus.CONFLICT, "CHECKLIST_004","이미 추가된 체크리스트입니다."),
-	CHECKLIST_CREATE_FORBIDDEN(HttpStatus.BAD_REQUEST,"CHECKLIST_005","선택 항목만 추가할 수 있습니다."),
+	CHECKLIST_DELETE_FORBIDDEN(HttpStatus.BAD_REQUEST, "CHECKLIST_003", "선택 항목만 삭제할 수 있습니다."),
+	CHECKLIST_ALREADY_EXISTS(HttpStatus.CONFLICT, "CHECKLIST_004", "이미 추가된 체크리스트입니다."),
+	CHECKLIST_CREATE_FORBIDDEN(HttpStatus.BAD_REQUEST, "CHECKLIST_005", "선택 항목만 추가할 수 있습니다."),
 
 	// 절차
 	PROCEDURE_NOT_FOUND(HttpStatus.NOT_FOUND, "PROCEDURE_001", "절차 정보를 찾을 수 없습니다."),
 
+	// 캘린더
+	INVALID_PENDING_TASK(HttpStatus.BAD_REQUEST, "CALENDAR_001", "마감일이 없는 일정만 등록 가능합니다.."),
+	CALENDAR_EVENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "CALENDAR_002", "이미 캘린더에 추가된 일정입니다."),
+	CALENDAR_EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "CALENDAR_003", "캘린더 일정을 찾을 수 없습니다."),
+	CANNOT_MODIFY_SYSTEM_EVENT(HttpStatus.BAD_REQUEST, "CALENDAR_004", "수정할 수 없는 일정입니다."),
+	CANNOT_DELETE_SYSTEM_EVENT(HttpStatus.BAD_REQUEST, "CALENDAR_005", "삭제할 수 없는 일정입니다."),
+
 	// 고인 프로필
-	DECEASED_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND,"DECEASED_PROFILE_001","고인 정보를 찾을 수 없습니다."),
+	DECEASED_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "DECEASED_PROFILE_001", "고인 정보를 찾을 수 없습니다."),
 	PROFILE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "DECEASED_PROFILE_002", "해당 프로필에 접근할 수 없습니다."),
 	CANNOT_DELETE_ACTIVE_DECEASED_PROFILE(HttpStatus.BAD_REQUEST, "DECEASED_PROFILE_003", "현재 진행 중인 고인 정보는 삭제할 수 없습니다."),
-	INVALID_DATE_OF_DEATH(HttpStatus.BAD_REQUEST, "DECEASED_PROFILE_004","영면일은 오늘 이후 날짜로 선택할 수 없습니다."),
+	INVALID_DATE_OF_DEATH(HttpStatus.BAD_REQUEST, "DECEASED_PROFILE_004", "영면일은 오늘 이후 날짜로 선택할 수 없습니다."),
 
 	// 설문조사
 	SURVEY_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "SURVEY_001", "이미 완료된 설문조사입니다."),
@@ -52,10 +59,7 @@ public enum ErrorCode {
 	// AI 챗봇
 	AI_CHAT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "CHAT_001", "AI 챗봇 서비스와 통신할 수 없습니다."),
 	// 서류
-	DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOCUMENT_001", "해당 서류를 찾을 수 없습니다.")
-
-
-	;
+	DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOCUMENT_001", "해당 서류를 찾을 수 없습니다.");
 	private final HttpStatus status;
 	private final String code;
 	private final String message;

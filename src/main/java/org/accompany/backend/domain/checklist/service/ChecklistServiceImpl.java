@@ -365,7 +365,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 		// 3. checklist 조회
 		UserProcedureChecklist checklist = userProcedureChecklistRepository
-				.findByUserProcedureChecklistId(userProcedureChecklistId)
+				.findById(userProcedureChecklistId)
 				.orElseThrow(() -> new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
 
 		// 4. 권한 체크
@@ -551,7 +551,7 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 		UserProcedureChecklist checklist =
 				userProcedureChecklistRepository
-						.findByUserProcedureChecklistId(userProcedureChecklistId)
+						.findById(userProcedureChecklistId)
 						.orElseThrow(() ->
 								new BusinessException(ErrorCode.CHECKLIST_NOT_FOUND));
 
