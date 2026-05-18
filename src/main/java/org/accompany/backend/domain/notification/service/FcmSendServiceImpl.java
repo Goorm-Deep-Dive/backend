@@ -66,15 +66,16 @@ public class FcmSendServiceImpl implements FcmSendService {
             }
         }
 
+        MessagingErrorCode finalErrorCode = (lastException != null) ? lastException.getMessagingErrorCode() : null;
         log.error("[FCM] 발송 최종 실패 - notificationId={}, errorCode={}",
-                payload.notificationId(), lastException.getMessagingErrorCode());
-        return FcmSendResult.failure("FCM_SEND_FAILED:" + lastException.getMessagingErrorCode());
+                payload.notificationId(), finalErrorCode);
+        return FcmSendResult.failure("FCM_SEND_FAILED:" + finalErrorCode);
     }
 
     private boolean isRetryable(MessagingErrorCode errorCode) {
         if (errorCode == null) return false;
         return switch (errorCode) {
-            case UNREGISTERED, INVALID_ARGUMENT -> false;
+            case UNREGISTERED, INVALID_ARGUMENT, SENDER_ID_MISMATCH, THIRD_PARTY_AUTH_ERROR -> false;
             default -> true;
         };
     }
