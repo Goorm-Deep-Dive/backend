@@ -11,6 +11,7 @@ import org.accompany.backend.domain.checklist.repository.ChecklistRepository;
 import org.accompany.backend.domain.checklist.repository.UserDocumentChecklistRepository;
 import org.accompany.backend.domain.checklist.repository.UserProcedureChecklistRepository;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
+import org.accompany.backend.domain.notification.event.CategoryCompletedEvent;
 import org.accompany.backend.domain.procedure.entity.Procedure;
 import org.accompany.backend.domain.procedure.entity.ProcedureCategory;
 import org.accompany.backend.domain.procedure.repository.ProcedureCategoryRepository;
@@ -107,6 +108,20 @@ public class ChecklistServiceImpl implements ChecklistService {
 						.toList();
 
 		log.info("[Checklist] getCategoryProcedures END - categoryId={}, profileId={}, count={}", categoryId, profileId, procedures.size());
+
+		// 카테고리 완료 시 알림 트리거
+		boolean allChecked = !procedures.isEmpty()
+				&& procedures.stream().allMatch(ChecklistCategoryProcedureRes.Procedure::checked);
+		if (allChecked) {
+			List<UserProcedureChecklist> latestChecked = userProcedureChecklistRepository
+					.findCheckedInCategoryOrderByUpdatedAtDesc(profileId, categoryId);
+			if (!latestChecked.isEmpty()) {
+				Long lastCheckedChecklistId = latestChecked.get(0).getUserProcedureChecklistId();
+				applicationEventPublisher.publishEvent(
+						new CategoryCompletedEvent(profileId, categoryId, category.getCategoryName(), lastCheckedChecklistId)
+				);
+			}
+		}
 
 		return new ChecklistCategoryProcedureRes(
 				category.getProcedureCategoryId(),

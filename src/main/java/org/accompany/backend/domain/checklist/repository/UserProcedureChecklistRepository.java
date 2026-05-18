@@ -67,4 +67,17 @@ public interface UserProcedureChecklistRepository extends JpaRepository<UserProc
 		);
 	}
 
+	@Query("""
+		SELECT upc
+		FROM UserProcedureChecklist upc
+		WHERE upc.deceasedProfile.deceasedProfileId = :profileId
+		  AND upc.procedure.procedureCategory.procedureCategoryId = :categoryId
+		  AND upc.isChecked = true
+		ORDER BY upc.updatedAt DESC
+	""")
+	List<UserProcedureChecklist> findCheckedInCategoryOrderByUpdatedAtDesc(
+			@Param("profileId") Long profileId,
+			@Param("categoryId") Long categoryId
+	);
+
 }
