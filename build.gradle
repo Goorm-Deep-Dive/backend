@@ -60,6 +60,8 @@ dependencies {
 
     // health check
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    //micrometer-prometheus
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
