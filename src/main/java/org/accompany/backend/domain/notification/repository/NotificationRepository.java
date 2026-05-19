@@ -3,7 +3,6 @@ package org.accompany.backend.domain.notification.repository;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.notification.entity.Notification;
 import org.accompany.backend.domain.notification.entity.NotificationDeliveryStatus;
-import org.accompany.backend.domain.procedure.entity.DueDateType;
 import org.accompany.backend.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,10 +32,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
            "AND upc.isChecked = false " +
            "AND upc.dueDate IS NOT NULL " +
            "AND upc.dueDate >= :todayStart " +
-           "AND p.dueDateType NOT IN :excludedTypes")
+           "AND EXISTS (SELECT 1 FROM CalendarEvent ce WHERE ce.userProcedureChecklist = upc)")
     List<UserProcedureChecklist> findNotificationTargetChecklists(
-            @Param("todayStart") LocalDateTime todayStart,
-            @Param("excludedTypes") List<DueDateType> excludedTypes);
+            @Param("todayStart") LocalDateTime todayStart);
 
     @Query("SELECT n FROM Notification n " +
            "JOIN FETCH n.deceasedProfile " +

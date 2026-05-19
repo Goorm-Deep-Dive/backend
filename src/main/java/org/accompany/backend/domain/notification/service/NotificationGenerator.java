@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.notification.repository.NotificationRepository;
-import org.accompany.backend.domain.procedure.entity.DueDateType;
 import org.accompany.backend.domain.user.entity.User;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +20,6 @@ import java.util.stream.Collectors;
 public class NotificationGenerator {
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-    private static final List<DueDateType> EXCLUDED_DUE_DATE_TYPES =
-            List.of(DueDateType.IMMEDIATE, DueDateType.NONE);
 
     private final NotificationRepository notificationRepository;
     private final NotificationUserProcessor userProcessor;
@@ -34,7 +31,7 @@ public class NotificationGenerator {
         LocalDateTime todayStart = today.atStartOfDay();
 
         List<UserProcedureChecklist> notificationTargetChecklists = notificationRepository
-                .findNotificationTargetChecklists(todayStart, EXCLUDED_DUE_DATE_TYPES);
+                .findNotificationTargetChecklists(todayStart);
 
         Map<User, List<UserProcedureChecklist>> byUser = notificationTargetChecklists.stream()
                 .collect(Collectors.groupingBy(c -> c.getDeceasedProfile().getUser()));
