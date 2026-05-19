@@ -1,6 +1,7 @@
 package org.accompany.backend.domain.checklist.dto.response;
 
 import org.accompany.backend.domain.procedure.dto.response.ProcedureDocumentDetailRes;
+import org.accompany.backend.domain.procedure.entity.DueDateType;
 
 import java.util.List;
 
@@ -11,8 +12,9 @@ public record ChecklistProcedureDetailRes(
 		Long procedureCategoryId,
 
 		String procedureName,
-		String description,//260428 수정사항 (추가)
-
+		String description,
+		DueDateType dueDateType,
+		Integer remainingDays,
 		String dueDateDescription,
 		String searchScope,
 		String cautionText,

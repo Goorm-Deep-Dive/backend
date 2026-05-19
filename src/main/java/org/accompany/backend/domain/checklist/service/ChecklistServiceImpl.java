@@ -97,7 +97,6 @@ public class ChecklistServiceImpl implements ChecklistService {
 				checklistRepository.findProceduresWithChecklist(categoryId, profileId);
 
 		// 5. DTO 변환
-
 		List<ChecklistCategoryProcedureRes.Procedure> procedures =
 				rows.stream()
 						.map(this::toProcedureRes)
@@ -142,7 +141,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 				dto.procedureName(),
 				calculateRemainingDays(dueDate),
 				dto.checked(),
-				convertPriority(dto.priority())
+				convertPriority(dto.priority()),
+				dto.dueDateType()
 		);
 	}
 
@@ -282,7 +282,9 @@ public class ChecklistServiceImpl implements ChecklistService {
 						.toList();
 */
 		boolean checked = checklist != null && checklist.isChecked();
-
+		LocalDateTime dueDate = checklist != null
+				? checklist.getDueDate()
+				: null;
 		ChecklistProcedureDetailRes response =
 				new ChecklistProcedureDetailRes(
 						checklist != null ? checklist.getUserProcedureChecklistId() : null,
@@ -291,7 +293,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 
 						procedure.getProcedureName(),
 						procedure.getDescription(),
-
+						procedure.getDueDateType(),
+						calculateRemainingDays(dueDate),
 						procedure.getDueDateDescription(),
 						procedure.getSearchScope(),
 						procedure.getCautionText(),
