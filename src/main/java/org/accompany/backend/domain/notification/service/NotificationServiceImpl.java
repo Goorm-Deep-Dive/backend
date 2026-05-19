@@ -90,7 +90,7 @@ public class NotificationServiceImpl implements NotificationService {
         for (DeceasedProfile profile : profiles) {
             FcmMessagePayload payload = new FcmMessagePayload(
                     profile.getName(),
-                    "FCM 발송 테스트입니다",
+                    "사망 신고서 접수 까지 D - 3일 남았습니다.",
                     0L
             );
 
