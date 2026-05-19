@@ -3,7 +3,6 @@ package org.accompany.backend.domain.notification.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
-import org.accompany.backend.domain.notification.entity.NotificationSlot;
 import org.accompany.backend.domain.notification.repository.NotificationRepository;
 import org.accompany.backend.domain.user.entity.User;
 import org.springframework.stereotype.Component;
@@ -25,8 +24,8 @@ public class NotificationGenerator {
     private final NotificationRepository notificationRepository;
     private final NotificationUserProcessor userProcessor;
 
-    public void generate(NotificationSlot slot) {
-        log.info("[NotificationGenerator] 전체 알림 생성 시작 - slot={}", slot);
+    public void generate(int hour) {
+        log.info("[NotificationGenerator] 전체 알림 생성 시작 - hour={}", hour);
 
         LocalDate today = LocalDate.now(KST);
         LocalDateTime todayStart = today.atStartOfDay();
@@ -45,7 +44,7 @@ public class NotificationGenerator {
 
         for (Map.Entry<User, List<UserProcedureChecklist>> entry : byUser.entrySet()) {
             try {
-                userProcessor.process(entry.getKey(), entry.getValue(), today, slot);
+                userProcessor.process(entry.getKey(), entry.getValue(), today, hour);
                 successCount++;
             } catch (Exception e) {
                 failCount++;
@@ -54,7 +53,7 @@ public class NotificationGenerator {
             }
         }
 
-        log.info("[NotificationGenerator] 전체 알림 생성 완료 - slot={}, 성공={}, 실패={}",
-                slot, successCount, failCount);
+        log.info("[NotificationGenerator] 전체 알림 생성 완료 - hour={}, 성공={}, 실패={}",
+                hour, successCount, failCount);
     }
 }

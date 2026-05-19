@@ -6,7 +6,6 @@ import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
 import org.accompany.backend.domain.checklist.service.ChecklistServiceImpl;
 import org.accompany.backend.domain.notification.entity.Notification;
 import org.accompany.backend.domain.notification.entity.NotificationDeliveryStatus;
-import org.accompany.backend.domain.notification.entity.NotificationSlot;
 import org.accompany.backend.domain.notification.repository.NotificationBulkRepository;
 import org.accompany.backend.domain.notification.repository.NotificationRepository;
 import org.accompany.backend.domain.user.entity.User;
@@ -31,7 +30,7 @@ public class NotificationUserProcessor {
     private final ChecklistServiceImpl checklistService;
     private final FcmSendService fcmSendService;
 
-    public void process(User user, List<UserProcedureChecklist> notificationTargetChecklists, LocalDate today, NotificationSlot slot) {
+    public void process(User user, List<UserProcedureChecklist> notificationTargetChecklists, LocalDate today, int hour) {
         log.info("[NotificationUserProcessor] 시작 - userId={}", user.getUserId());
 
         Map<Long, List<UserProcedureChecklist>> byProfile = notificationTargetChecklists.stream()
@@ -43,7 +42,7 @@ public class NotificationUserProcessor {
             Long profileId = entry.getKey();
             List<UserProcedureChecklist> profileChecklists = entry.getValue();
 
-            String idempotencyKey = buildIdempotencyKey(profileId, today, slot);
+            String idempotencyKey = buildIdempotencyKey(profileId, today, hour);
 
             Optional<UserProcedureChecklist> closestOpt = profileChecklists.stream()
                     .min(Comparator
@@ -126,7 +125,7 @@ public class NotificationUserProcessor {
                 user.getUserId(), toInsert.size(), sentIds.size(), failedReasons.size());
     }
 
-    private String buildIdempotencyKey(Long profileId, LocalDate today, NotificationSlot slot) {
-        return "DDAY-" + profileId + "-" + today.toString() + "-" + slot.name();
+    private String buildIdempotencyKey(Long profileId, LocalDate today, int hour) {
+        return "DDAY-" + profileId + "-" + today.toString() + "-" + hour;
     }
 }
