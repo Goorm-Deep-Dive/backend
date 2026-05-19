@@ -31,9 +31,7 @@ public class CalendarEventListener {
 	private final UserProcedureChecklistRepository checklistRepository;
 	private final CalendarEventRepository calendarEventRepository;
 
-	@TransactionalEventListener(
-			phase = TransactionPhase.AFTER_COMMIT
-	)
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void handleCalendarUpdated(CalendarUpdatedEvent event) {
 
