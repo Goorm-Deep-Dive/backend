@@ -18,8 +18,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +25,6 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class CategoryCompletedEventListener {
-
-    private static final DateTimeFormatter HOUR_KEY_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHH");
 
     private final UserProcedureChecklistRepository userProcedureChecklistRepository;
     private final NotificationBulkRepository notificationBulkRepository;
@@ -55,7 +51,7 @@ public class CategoryCompletedEventListener {
 
         // 2. 멱등키 + 메시지
         String idempotencyKey = "DONE-" + event.profileId() + "-" + event.categoryId()
-                + "-" + LocalDateTime.now().format(HOUR_KEY_FORMAT);
+                + "-last" + event.lastCheckedChecklistId();
         String message = event.categoryName() + " 부문 과업을 모두 완료했어요";
 
         // 3. Notification entity 생성 + bulk insert (ON CONFLICT DO NOTHING)
