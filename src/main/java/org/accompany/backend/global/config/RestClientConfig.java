@@ -23,8 +23,8 @@ public class RestClientConfig {
     }
 
     @Bean
-    public WebClient chatbotWebClient() {
-        return WebClient.builder()
+    public WebClient chatbotWebClient(WebClient.Builder builder) {
+        return builder
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }

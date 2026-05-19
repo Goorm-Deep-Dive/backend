@@ -69,6 +69,8 @@ dependencies {
     // Firebase Admin SDK (FCM 푸시 알림 발송용)
     implementation 'com.google.firebase:firebase-admin:9.3.0'
 
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+
 }
 
 tasks.named('test') {

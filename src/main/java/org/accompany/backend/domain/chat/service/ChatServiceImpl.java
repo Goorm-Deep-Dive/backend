@@ -18,7 +18,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -63,9 +62,8 @@ public class ChatServiceImpl implements ChatService {
         SseEmitter emitter = new SseEmitter(150_000L);
 
         StringBuilder fullResponse = new StringBuilder();
-        String requestId = UUID.randomUUID().toString().substring(0, 8);
 
-        log.info("[Chat:SSE] 시작 - requestId={}, userId={}", requestId, userId);
+        log.info("[Chat:SSE] 시작 - userId={}", userId);
         Map<String, String> mdcContext = MDC.getCopyOfContextMap();
 
         Thread.ofVirtual().start(() -> {
@@ -109,13 +107,13 @@ public class ChatServiceImpl implements ChatService {
                 }
 
             } catch (IOException e) {
-                log.warn("[Chat:SSE] 클라이언트 연결 종료 - requestId={}, userId={}, length={}",
-                        requestId, userId, fullResponse.length());
+                log.warn("[Chat:SSE] 클라이언트 연결 종료 - userId={}, length={}",
+                        userId, fullResponse.length());
                 emitter.complete();
 
             } catch (Exception e) {
-                log.error("[Chat:SSE] 실패 - requestId={}, userId={}, length={}",
-                        requestId, userId, fullResponse.length(), e);
+                log.error("[Chat:SSE] 실패 - userId={}, length={}",
+                        userId, fullResponse.length(), e);
                 emitter.completeWithError(e);
             } finally {
                 MDC.clear();
@@ -123,11 +121,11 @@ public class ChatServiceImpl implements ChatService {
         });
 
         emitter.onTimeout(() -> {
-            log.warn("[Chat:SSE] 타임아웃 - requestId={}, userId={}", requestId, userId);
+            log.warn("[Chat:SSE] 타임아웃 - userId={}", userId);
             try {
                 emitter.complete();
             } catch (Exception e) {
-                log.debug("[Chat:SSE] 타임아웃 처리 중 이미 완료된 emitter - requestId={}", requestId);
+                log.debug("[Chat:SSE] 타임아웃 처리 중 이미 완료된 emitter");
             }
         });
 
