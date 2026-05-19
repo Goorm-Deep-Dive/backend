@@ -5,14 +5,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.accompany.backend.global.security.principal.CustomUserPrincipal;
-import org.slf4j.MDC;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -36,9 +33,6 @@ public class LoggingInterceptor implements HandlerInterceptor {
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
-
-        String traceId = UUID.randomUUID().toString().substring(0, 8);
-        MDC.put("traceId", traceId);
 
         Long userId = extractUserId(request); // 사용자 정보 조회
         String handlerName = getHandlerName(handlerMethod); // 실행될 Controller + 메서드명 추출
@@ -102,8 +96,6 @@ public class LoggingInterceptor implements HandlerInterceptor {
                     ex.getMessage(),
                     ex);
         }
-
-        MDC.clear();
     }
 
     private String getHandlerName(HandlerMethod handlerMethod) {
