@@ -43,20 +43,11 @@ public class ChecklistController {
 
 		log.debug("ChecklistController.getCategoryProcedures, {}", principal);
 
-		return ApiResponse.success(
-				SuccessCode.OK,
-				checklistService.getCategoryProcedures(
-						categoryId,
-						principal.getUserId()
-				)
-		);
+		return ApiResponse.success(SuccessCode.OK, checklistService.getCategoryProcedures(categoryId, principal.getUserId()));
 	}
 
 	@GetMapping("/procedures/{procedureId}")
-	@Operation(
-			summary = "카테고리별 체크리스트 상세 정보 조회",
-			description = "각 카테고리의 체크리스트 상세 정보를 조회합니다."
-	)
+	@Operation(summary = "카테고리별 체크리스트 상세 정보 조회", description = "각 카테고리의 체크리스트 상세 정보를 조회합니다.")
 	public ResponseEntity<ApiResponse<ChecklistProcedureDetailRes>> getProcedureDetail(
 			@PathVariable Long procedureId,
 			@AuthenticationPrincipal CustomUserPrincipal principal
@@ -112,7 +103,6 @@ public class ChecklistController {
 
 		return ApiResponse.success(SuccessCode.USER_DOCUMENT_CHECKLIST_UPDATED);
 	}
-
 
 
 	@Operation(summary = "추가 가능 체크리스트 목록 조회", description = "사용자가 추가 가능한 선택(가변) 체크리스트 항목을 조회합니다.")

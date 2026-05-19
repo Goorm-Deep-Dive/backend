@@ -1,5 +1,7 @@
 package org.accompany.backend.domain.checklist.dto.response;
 
+import org.accompany.backend.domain.procedure.entity.DueDateType;
+
 import java.util.List;
 
 public record ChecklistCategoryProcedureRes(
@@ -13,7 +15,7 @@ public record ChecklistCategoryProcedureRes(
 				String procedureName,
 				Integer remainingDays,
 				boolean checked,
-				String priority
-				//due_date_type
+				String priority,
+				DueDateType dueDateType
 		) {}
 	}
