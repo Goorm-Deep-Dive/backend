@@ -1,6 +1,6 @@
 package org.accompany.backend.domain.notification.repository;
 
-import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.calendar.entity.CalendarEvent;
 import org.accompany.backend.domain.notification.entity.Notification;
 import org.accompany.backend.domain.notification.entity.NotificationDeliveryStatus;
 import org.accompany.backend.domain.user.entity.User;
@@ -24,16 +24,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     long countByUserAndIsReadFalse(User user);
 
-    @Query("SELECT upc FROM UserProcedureChecklist upc " +
+    @Query("SELECT ce FROM CalendarEvent ce " +
+           "JOIN FETCH ce.userProcedureChecklist upc " +
            "JOIN FETCH upc.deceasedProfile dp " +
            "JOIN FETCH dp.user u " +
            "JOIN FETCH upc.procedure p " +
-           "WHERE u.isNotificationEnabled = true " +
+           "WHERE upc IS NOT NULL " +
+           "AND u.isNotificationEnabled = true " +
            "AND upc.isChecked = false " +
-           "AND upc.dueDate IS NOT NULL " +
-           "AND upc.dueDate >= :todayStart " +
-           "AND EXISTS (SELECT 1 FROM CalendarEvent ce WHERE ce.userProcedureChecklist = upc)")
-    List<UserProcedureChecklist> findNotificationTargetChecklists(
+           "AND ce.startAt >= :todayStart")
+    List<CalendarEvent> findNotificationTargets(
             @Param("todayStart") LocalDateTime todayStart);
 
     @Query("SELECT n FROM Notification n " +
