@@ -6,6 +6,7 @@ import org.accompany.backend.domain.calendar.entity.CalendarEvent;
 import org.accompany.backend.domain.checklist.service.ChecklistServiceImpl;
 import org.accompany.backend.domain.notification.entity.Notification;
 import org.accompany.backend.domain.notification.entity.NotificationDeliveryStatus;
+import org.accompany.backend.domain.notification.entity.NotificationSlot;
 import org.accompany.backend.domain.notification.repository.NotificationBulkRepository;
 import org.accompany.backend.domain.notification.repository.NotificationRepository;
 import org.accompany.backend.domain.user.entity.User;
@@ -30,7 +31,7 @@ public class NotificationUserProcessor {
     private final ChecklistServiceImpl checklistService;
     private final FcmSendService fcmSendService;
 
-    public void process(User user, List<CalendarEvent> notificationTargets, LocalDate today, int hour) {
+    public void process(User user, List<CalendarEvent> notificationTargets, LocalDate today, NotificationSlot slot) {
         log.info("[NotificationUserProcessor] 시작 - userId={}", user.getUserId());
 
         Map<Long, List<CalendarEvent>> byProfile = notificationTargets.stream()
@@ -42,7 +43,7 @@ public class NotificationUserProcessor {
             Long profileId = entry.getKey();
             List<CalendarEvent> profileEvents = entry.getValue();
 
-            String idempotencyKey = buildIdempotencyKey(profileId, today, hour);
+            String idempotencyKey = buildIdempotencyKey(profileId, today, slot);
 
             Optional<CalendarEvent> closestOpt = profileEvents.stream()
                     .min(Comparator
@@ -125,7 +126,7 @@ public class NotificationUserProcessor {
                 user.getUserId(), toInsert.size(), sentIds.size(), failedReasons.size());
     }
 
-    private String buildIdempotencyKey(Long profileId, LocalDate today, int hour) {
-        return "DDAY-" + profileId + "-" + today.toString() + "-" + hour;
+    private String buildIdempotencyKey(Long profileId, LocalDate today, NotificationSlot slot) {
+        return "DDAY-" + profileId + "-" + today.toString() + "-" + slot.name();
     }
 }
