@@ -36,6 +36,19 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<CalendarEvent> findNotificationTargets(
             @Param("todayStart") LocalDateTime todayStart);
 
+    @Query("SELECT ce FROM CalendarEvent ce " +
+           "JOIN FETCH ce.userProcedureChecklist upc " +
+           "JOIN FETCH upc.deceasedProfile dp " +
+           "JOIN FETCH dp.user u " +
+           "JOIN FETCH upc.procedure p " +
+           "WHERE u.userId = :userId " +
+           "AND upc IS NOT NULL " +
+           "AND upc.isChecked = false " +
+           "AND ce.startAt >= :todayStart")
+    List<CalendarEvent> findNotificationTargetsByUser(
+            @Param("userId") Long userId,
+            @Param("todayStart") LocalDateTime todayStart);
+
     @Query("SELECT n FROM Notification n " +
            "JOIN FETCH n.deceasedProfile " +
            "WHERE n.idempotencyKey IN :keys " +

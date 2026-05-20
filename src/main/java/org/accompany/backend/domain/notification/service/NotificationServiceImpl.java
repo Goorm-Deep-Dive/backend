@@ -2,6 +2,8 @@ package org.accompany.backend.domain.notification.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.accompany.backend.domain.calendar.entity.CalendarEvent;
+import org.accompany.backend.domain.checklist.service.ChecklistServiceImpl;
 import org.accompany.backend.domain.deceasedProfile.entity.DeceasedProfile;
 import org.accompany.backend.domain.notification.dto.response.NotificationListRes;
 import org.accompany.backend.domain.notification.dto.response.NotificationRes;
@@ -15,8 +17,14 @@ import org.accompany.backend.global.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,9 +32,12 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class NotificationServiceImpl implements NotificationService {
 
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final FcmSendService fcmSendService;
+    private final ChecklistServiceImpl checklistService;
 
     @Override
     public NotificationListRes getNotifications(Long userId) {
@@ -83,14 +94,52 @@ public class NotificationServiceImpl implements NotificationService {
             throw new BusinessException(ErrorCode.DECEASED_PROFILE_NOT_FOUND);
         }
 
+        LocalDate today = LocalDate.now(KST);
+        LocalDateTime todayStart = today.atStartOfDay();
+
+        List<CalendarEvent> notificationTargets = notificationRepository
+                .findNotificationTargetsByUser(userId, todayStart);
+
+        Map<Long, List<CalendarEvent>> byProfile = notificationTargets.stream()
+                .collect(Collectors.groupingBy(ce -> ce.getUserProcedureChecklist().getDeceasedProfile().getDeceasedProfileId()));
+
         List<NotificationTestRes.TestResult> results = new ArrayList<>();
         int successCount = 0;
         int failureCount = 0;
 
         for (DeceasedProfile profile : profiles) {
+            List<CalendarEvent> profileEvents = byProfile.get(profile.getDeceasedProfileId());
+
+            if (profileEvents == null || profileEvents.isEmpty()) {
+                failureCount++;
+                results.add(new NotificationTestRes.TestResult(
+                        profile.getDeceasedProfileId(),
+                        profile.getName(),
+                        false,
+                        null,
+                        "표시할 캘린더 일정 없음"
+                ));
+                continue;
+            }
+
+            CalendarEvent closest = profileEvents.stream()
+                    .min(Comparator
+                            .comparing(CalendarEvent::getStartAt)
+                            .thenComparing(ce -> ce.getUserProcedureChecklist().getProcedure().getProcedureId()))
+                    .orElseThrow();
+
+            Integer daysLeft = checklistService.calculateRemainingDays(closest.getStartAt());
+
+            String message;
+            if (daysLeft == 0) {
+                message = "가장 빠른 기한이 D-day에요";
+            } else {
+                message = "가장 빠른 기한까지 D-" + daysLeft + "일 남았어요";
+            }
+
             FcmMessagePayload payload = new FcmMessagePayload(
                     profile.getName(),
-                    "사망 신고서 접수 까지 D - 3일 남았습니다.",
+                    message,
                     0L
             );
 
