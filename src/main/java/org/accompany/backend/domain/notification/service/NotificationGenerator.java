@@ -2,7 +2,7 @@ package org.accompany.backend.domain.notification.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.calendar.entity.CalendarEvent;
 import org.accompany.backend.domain.notification.repository.NotificationRepository;
 import org.accompany.backend.domain.user.entity.User;
 import org.springframework.stereotype.Component;
@@ -30,19 +30,19 @@ public class NotificationGenerator {
         LocalDate today = LocalDate.now(KST);
         LocalDateTime todayStart = today.atStartOfDay();
 
-        List<UserProcedureChecklist> notificationTargetChecklists = notificationRepository
-                .findNotificationTargetChecklists(todayStart);
+        List<CalendarEvent> notificationTargets = notificationRepository
+                .findNotificationTargets(todayStart);
 
-        Map<User, List<UserProcedureChecklist>> byUser = notificationTargetChecklists.stream()
-                .collect(Collectors.groupingBy(c -> c.getDeceasedProfile().getUser()));
+        Map<User, List<CalendarEvent>> byUser = notificationTargets.stream()
+                .collect(Collectors.groupingBy(ce -> ce.getUserProcedureChecklist().getDeceasedProfile().getUser()));
 
-        log.info("[NotificationGenerator] 대상 사용자 수={}, 후보 체크리스트 수={}",
-                byUser.size(), notificationTargetChecklists.size());
+        log.info("[NotificationGenerator] 대상 사용자 수={}, 후보 캘린더 이벤트 수={}",
+                byUser.size(), notificationTargets.size());
 
         int successCount = 0;
         int failCount = 0;
 
-        for (Map.Entry<User, List<UserProcedureChecklist>> entry : byUser.entrySet()) {
+        for (Map.Entry<User, List<CalendarEvent>> entry : byUser.entrySet()) {
             try {
                 userProcessor.process(entry.getKey(), entry.getValue(), today, hour);
                 successCount++;

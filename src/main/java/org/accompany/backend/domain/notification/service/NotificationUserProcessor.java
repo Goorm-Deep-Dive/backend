@@ -2,7 +2,7 @@ package org.accompany.backend.domain.notification.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.accompany.backend.domain.checklist.entity.UserProcedureChecklist;
+import org.accompany.backend.domain.calendar.entity.CalendarEvent;
 import org.accompany.backend.domain.checklist.service.ChecklistServiceImpl;
 import org.accompany.backend.domain.notification.entity.Notification;
 import org.accompany.backend.domain.notification.entity.NotificationDeliveryStatus;
@@ -30,29 +30,29 @@ public class NotificationUserProcessor {
     private final ChecklistServiceImpl checklistService;
     private final FcmSendService fcmSendService;
 
-    public void process(User user, List<UserProcedureChecklist> notificationTargetChecklists, LocalDate today, int hour) {
+    public void process(User user, List<CalendarEvent> notificationTargets, LocalDate today, int hour) {
         log.info("[NotificationUserProcessor] 시작 - userId={}", user.getUserId());
 
-        Map<Long, List<UserProcedureChecklist>> byProfile = notificationTargetChecklists.stream()
-                .collect(Collectors.groupingBy(c -> c.getDeceasedProfile().getDeceasedProfileId()));
+        Map<Long, List<CalendarEvent>> byProfile = notificationTargets.stream()
+                .collect(Collectors.groupingBy(ce -> ce.getUserProcedureChecklist().getDeceasedProfile().getDeceasedProfileId()));
 
         List<Notification> toInsert = new ArrayList<>();
 
-        for (Map.Entry<Long, List<UserProcedureChecklist>> entry : byProfile.entrySet()) {
+        for (Map.Entry<Long, List<CalendarEvent>> entry : byProfile.entrySet()) {
             Long profileId = entry.getKey();
-            List<UserProcedureChecklist> profileChecklists = entry.getValue();
+            List<CalendarEvent> profileEvents = entry.getValue();
 
             String idempotencyKey = buildIdempotencyKey(profileId, today, hour);
 
-            Optional<UserProcedureChecklist> closestOpt = profileChecklists.stream()
+            Optional<CalendarEvent> closestOpt = profileEvents.stream()
                     .min(Comparator
-                            .comparing(UserProcedureChecklist::getDueDate)
-                            .thenComparing(c -> c.getProcedure().getProcedureId()));
+                            .comparing(CalendarEvent::getStartAt)
+                            .thenComparing(ce -> ce.getUserProcedureChecklist().getProcedure().getProcedureId()));
 
             if (closestOpt.isEmpty()) continue;
 
-            UserProcedureChecklist closest = closestOpt.get();
-            Integer daysLeft = checklistService.calculateRemainingDays(closest.getDueDate());
+            CalendarEvent closest = closestOpt.get();
+            Integer daysLeft = checklistService.calculateRemainingDays(closest.getStartAt());
 
             String message;
             if (daysLeft == 0) {
@@ -63,8 +63,8 @@ public class NotificationUserProcessor {
 
             Notification notification = Notification.builder()
                     .user(user)
-                    .deceasedProfile(closest.getDeceasedProfile())
-                    .userProcedureChecklist(closest)
+                    .deceasedProfile(closest.getUserProcedureChecklist().getDeceasedProfile())
+                    .userProcedureChecklist(closest.getUserProcedureChecklist())
                     .message(message)
                     .isRead(false)
                     .idempotencyKey(idempotencyKey)
