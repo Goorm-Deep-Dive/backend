@@ -156,6 +156,24 @@
 - Firebase 서비스 계정 키는 아래 경로에 저장합니다.   
   `secrets/firebase-service-account.json`
 
+### Local Run
+```
+./gradlew bootRun
+```
+
+### Build
+```
+./gradlew build
+```
+### Docker Run
+```
+docker build -t accompany-backend .
+
+docker run -d \
+--name accompany-backend \
+-p 8080:8080 \
+accompany-backend
+```
 
 ## 10. 프로젝트 구조
 ```text
